@@ -23,8 +23,8 @@ jobs:
       run: sudo apt-get update
     - name: Install vorbis-tools / oggenc
       run: sudo apt-get install vorbis-tools
-    - name: Install webp / cwebp
-      run: sudo apt-get install webp
+    - name: Install WebP and FFmpeg
+      run: sudo apt-get install webp ffmpeg
     - name: Check CPU
       run: sudo cat /proc/cpuinfo
     - name: Build with Maven

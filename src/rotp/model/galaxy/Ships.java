@@ -15,6 +15,7 @@
  */
 package rotp.model.galaxy;
 
+import rotp.replay.ReplayRecorder;
 import static rotp.model.ships.ShipDesignLab.MAX_DESIGNS;
 
 import java.io.Serializable;
@@ -150,6 +151,9 @@ public class Ships implements Base, Serializable {
 		log(txt);
 		Rotp.ifIDE(txt);
 	}
+    private void recordDeployment(ShipFleet fleet, int destination, int ships) {
+        ReplayRecorder.event("Fleet order", fleet.empId(), fleet.sysId(), ships + " ships to #" + destination);
+    }
     public ShipFleet deployFleet(ShipFleet sourceFleet, int destSysId) {
 		if (!sourceFleet.canReach(destSysId)) {
 			logIllegalDeployment(sourceFleet, destSysId);
@@ -181,6 +185,7 @@ public class Ships implements Base, Serializable {
         if (deployedFleet == sourceFleet) 
             return sourceFleet;
 
+        if (ReplayRecorder.recording()) recordDeployment(sourceFleet, destSysId, sourceFleet.numShips());
         // if no deployed fleet, use this one
         if (deployedFleet == null) {
             sourceFleet.destSysId(destSysId);
@@ -253,6 +258,7 @@ public class Ships implements Base, Serializable {
         if (sourceFleet.inTransit())
             return false;
 
+        if (ReplayRecorder.recording()) recordDeployment(sourceFleet, destSysId, totalDeployed);
         // else we create a new deployed subfleet from the source 
         StarSystem sys = sourceFleet.system();
         StarSystem destSys = galaxy().system(destSysId);
@@ -307,6 +313,7 @@ public class Ships implements Base, Serializable {
 
         sourceFleet.destSysId(destSysId);
         sourceFleet.launch(currX, currY);
+        if (ReplayRecorder.recording()) recordDeployment(sourceFleet, destSysId, sourceFleet.numShips());
 
         return sourceFleet;
     }

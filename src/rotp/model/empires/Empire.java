@@ -15,6 +15,7 @@
  */
 package rotp.model.empires;
 
+import rotp.replay.ReplayRecorder;
 import static rotp.model.colony.Colony.DIRTY_TYPES_NUM;
 import static rotp.model.tech.Tech.miniFastRate;
 
@@ -353,7 +354,7 @@ public final class Empire extends Species implements NamedObject {
     }
     public String getAiKey()					  { return IGameOptions.allAIset().aliensKey(selectedAI); } // BR:
     public String getAiName() 					  { return text(getAiKey()); } // BR:
-    public Diplomat diplomatAI()                  { return ai().diplomat(); }
+    public Diplomat diplomatAI()                  { return ReplayRecorder.diplomat(this, ai().diplomat()); }
     public FleetCommander fleetCommanderAI()      { return ai().fleetCommander(); }
     public ShipCaptain shipCaptainAI()            { return ai().shipCaptain(); }
     public General generalAI()                    { return ai().general(); }
@@ -1121,7 +1122,7 @@ public final class Empire extends Species implements NamedObject {
 	            Colony col = sys.colony();
 	            col.addColonyOrder(order, amt);
 	            if (col.reallocationRequired)
-	                governorAI().setColonyAllocations(col);
+	                col.setGovernorAllocations();
         	}
         }
     }
@@ -1678,7 +1679,7 @@ public final class Empire extends Species implements NamedObject {
 				//do not overrule the governor if it is enabled, except it's for ship-limit-reached
 				Colony col = sv.colony(n);
 				if(!col.isGovernor() || isAIControlled() || col.shipyard().shipLimitReached() || col.shipyard().stargateCompleted())
-					governorAI().setColonyAllocations(col);
+					col.setGovernorAllocations();
 			}
         }
     }
@@ -3543,6 +3544,7 @@ public final class Empire extends Species implements NamedObject {
         GNNGenocideNotice.create(this, lastAttacker);
 
         extinct = true;
+        if (ReplayRecorder.recording()) ReplayRecorder.event("Elimination", id, -1, name());
         // iterate over list copy to avoid comodification
         List<ShipFleet> fleets = galaxy().ships.allFleets(id);
         for (ShipFleet fl: fleets) {

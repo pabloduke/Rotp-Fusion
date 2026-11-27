@@ -1,5 +1,6 @@
 package rotp.multiplayer.turn;
 
+import rotp.replay.ReplayRecorder;
 import java.util.Map;
 import java.util.Objects;
 
@@ -68,6 +69,11 @@ public final class InProcessBombardmentDecisionAdapter implements BombardmentDec
             fleet.bombard();
         attacker.sv.refreshFullScan(systemId);
         defender.sv.refreshFullScan(systemId);
+        if (ReplayRecorder.recording())
+            ReplayRecorder.event("Bombardment", attacker.id, systemId, choice + " against " + defender.name()
+                    + "\nPopulation: " + populationBefore + " → " + defender.sv.population(systemId)
+                    + "\nBases: " + basesBefore + " → " + defender.sv.bases(systemId)
+                    + "\nFactories: " + factoriesBefore + " → " + defender.sv.factories(systemId));
         for (PlayerSeat seat : session.controllerRegistry().seats()) {
             if (seat.controllerType() != PlayerSeat.ControllerType.HUMAN
                     || (seat.empireId() != attacker.id && seat.empireId() != defender.id))

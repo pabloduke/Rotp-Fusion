@@ -15,6 +15,7 @@
  */
 package rotp.model.empires;
 
+import rotp.replay.ReplayRecorder;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -288,6 +289,9 @@ public class GalacticCouncil implements Base, Serializable {
             lastVoted = null;
         }
 
+        if (ReplayRecorder.recording())
+            ReplayRecorder.event("Council vote", lastVoter.id, -1, lastVotes + " votes: "
+                    + (lastVoted == null ? "abstain" : lastVoted.name()));
         voteIndex++;
         if (!votingInProgress())
             closeConvention();

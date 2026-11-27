@@ -11,6 +11,20 @@ public class Launcher {
     }
 
     static boolean dispatch(String[] args) {
+        if (args.length > 0 && args[0].equals("--export-replay")) {
+            enableHeadless();
+            if (args.length != 2) {
+                System.err.println("Usage: --export-replay <recording>");
+                System.exit(2);
+            }
+            try {
+                System.out.println("Video: " + rotp.replay.ReplayVideo.export(java.nio.file.Path.of(args[1])));
+            } catch (Exception failure) {
+                System.err.println("Cannot export " + args[1] + ": " + failure.getMessage());
+                System.exit(1);
+            }
+            return true;
+        }
         if (args.length == 0 || !args[0].equals("--headless"))
             return false;
         enableHeadless();

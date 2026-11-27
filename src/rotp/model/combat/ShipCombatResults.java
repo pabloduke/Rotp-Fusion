@@ -15,6 +15,7 @@
  */
 package rotp.model.combat;
 
+import rotp.replay.ReplayRecorder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -260,6 +261,29 @@ public final class ShipCombatResults implements Base {
 		else
 			shipsPostRetreated.put(d, count);
 	}
+    private String startingForces;
+    void recordStartingForces() {
+        if (!ReplayRecorder.recording()) return;
+        var lines = new java.util.StringJoiner(", ");
+        for (var stack : activeStacks)
+            lines.add((stack.empire() == null ? "Monster" : stack.empire().name()) + " "
+                    + (stack.design() == null ? stack.name() : stack.design().name()) + " × " + stack.num);
+        startingForces = lines.toString();
+    }
+    private String counts(Map<ShipDesign, Integer> values) {
+        var lines = new java.util.StringJoiner(", ");
+        values.forEach((d, n) -> lines.add(d.empire().name() + " " + d.name() + " × " + n));
+        return values.isEmpty() ? "none" : lines.toString();
+    }
+    void recordBattle() {
+        if (startingForces == null) return;
+        Empire winner = victor();
+        String outcome = winner != null ? winner.name() : monster == null ? "No victor" : monster.name();
+        ReplayRecorder.event("Battle", winner == null ? -1 : winner.id, system.id,
+                "Forces: " + startingForces + "\nVictor: " + outcome + "\nShips lost: " + counts(shipsDestroyed)
+                + "\nPre-combat retreats: " + counts(shipsPreRetreated) + "\nRetreats: " + counts(shipsPostRetreated)
+                + "\nBases lost: " + basesDestroyed + ", population: " + popDestroyed() + ", factories: " + factoriesDestroyed());
+    }
     void logIncidents() {
         for (Empire e: usedBioweapons)
             BioweaponIncident.create(defender(), e, system());

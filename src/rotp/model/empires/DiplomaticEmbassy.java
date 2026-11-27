@@ -15,6 +15,7 @@
  */
 package rotp.model.empires;
 
+import rotp.replay.ReplayRecorder;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -428,6 +429,8 @@ public final class DiplomaticEmbassy implements Base, Serializable {
     public boolean peaceTreatyInEffect()   { return treaty.isPeace() || (peaceDuration > 0); }
     private void setTreaty(DiplomaticTreaty tr) {
         treaty = tr;
+        if (ReplayRecorder.recording())
+            ReplayRecorder.event("Treaty", view.ownerId(), -1, tr.getClass().getSimpleName() + " with " + empire().name());
         otherEmbassy().treaty = tr;
         view.setSuggestedAllocations();
         view.otherView().setSuggestedAllocations();

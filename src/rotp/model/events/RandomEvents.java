@@ -15,6 +15,7 @@
  */
 package rotp.model.events;
 
+import rotp.replay.ReplayRecorder;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -163,6 +164,8 @@ public class RandomEvents implements Base, Serializable {
 		}
 		if (ev.hasPendingEvents()) { // BR: May only happen with "fixed Event mode"
 			Empire emp = ev.getPendingEmpire();
+            if (ReplayRecorder.recording())
+                ReplayRecorder.event("Galaxy event", emp == null ? -1 : emp.id, -1, ev.getClass().getSimpleName());
 			ev.trigger(emp);
 			if (IDebugOptions.debugAutoRun() && IDebugOptions.debugLogEvents()) {
 				turnLog(IGameOptions.AUTORUN_EVENTS, "Get Pending Event for: " + emp.name());
@@ -255,6 +258,9 @@ public class RandomEvents implements Base, Serializable {
 		else
 			triggeredEvent.trigger(affectedEmpire);
 
+        if (ReplayRecorder.recording())
+            ReplayRecorder.event("Galaxy event", affectedEmpire == null ? -1 : affectedEmpire.id, -1,
+                    triggeredEvent.getClass().getSimpleName());
 		lastEvent = triggeredEvent; // modnar: keep track of last event
 
 		if (IDebugOptions.debugAutoRun() && IDebugOptions.debugLogEvents())
