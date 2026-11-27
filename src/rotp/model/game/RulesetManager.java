@@ -35,10 +35,10 @@ public final class RulesetManager {
 	public static RulesetManager current()	{
 		if (instance == null) {
 			instance = new RulesetManager();
-			AllSubUI.allModOptions(true);
+			if (!rotp.Launcher.headless()) AllSubUI.allModOptions(true);
 			instance.createNewOptions();
 			try {
-				UserPreferences.loadAndSave();
+				if (!rotp.Launcher.headless()) UserPreferences.loadAndSave();
 			}
 			catch (Throwable t) {
 				Rotp.startupException = t;
@@ -72,6 +72,10 @@ public final class RulesetManager {
 	public boolean isSetupMode()			{ return currentOptions == IGameOptions.SETUP_ID; }
 	public boolean isGameMode()				{ return currentOptions == IGameOptions.GAME_ID; }
 	public void setAsGameMode()				{
+		if (rotp.Launcher.headless()) {
+			currentOptions = IGameOptions.GAME_ID;
+			return;
+		}
 		currentOptions(IGameOptions.GAME_ID);
 		ErrorUI.inPlayerMode();
 	}

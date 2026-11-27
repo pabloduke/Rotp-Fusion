@@ -136,6 +136,7 @@ public class LanguageManager implements Base {
         if (selectedLanguage() == i)
             return;
         loadLanguage(i);
+        if (rotp.Launcher.headless()) return;
 		String newFrameTitle = text("GAME_TITLE_FRAME");
 		Rotp.getFrame().setTitle(newFrameTitle);
 		if (RotPUI.instance() != null)

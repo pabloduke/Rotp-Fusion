@@ -52,23 +52,27 @@ public class CombatStackMissile extends CombatStack implements ScaledInteger {
         offsetY = ship.offsetY;
 		attackLevel(ship.attackLevel());
 
+        if (!rotp.Launcher.headless())
+            initMissileImage(miss);
+
+		maxMove(miss.speed());
+        //image = missile.image(num);
+        turnsLeft = MAX_TURNS;
+        moveRate = target.maxMove() == 0 ? maxMove() : maxMove() / target.maxMove();
+    }
+    private void initMissileImage(ShipWeaponMissileType miss) {
         int imgW = s60;
         if (options().shipBasedMissiles() && empire().isEmpire()) {
         	missiles = empire().shipLab().missileImage(miss.tech(), imgW, imgW/5, false);
         }
         else {
             Image missileImg = image(miss.tech().imageKey());
-            int imgH   = imgW*missileImg.getHeight(null)/missileImg.getWidth(null);        	
+            int imgH   = imgW*missileImg.getHeight(null)/missileImg.getWidth(null);
             missiles   = newBufferedImage(imgW,imgH);
             Graphics g = missiles.createGraphics();
             g.drawImage(missileImg,0,0,imgW,imgH,null);
-            g.dispose();        	
+            g.dispose();
         }
-
-		maxMove(miss.speed());
-        //image = missile.image(num);
-        turnsLeft = MAX_TURNS;
-        moveRate = target.maxMove() == 0 ? maxMove() : maxMove() / target.maxMove();
     }
     @Override
     public String fullName() {

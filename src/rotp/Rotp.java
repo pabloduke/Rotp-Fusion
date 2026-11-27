@@ -233,6 +233,7 @@ public final class Rotp {
         return device;
     }
     public static int maxScreenIndex() {
+        if (Launcher.headless()) return 0;
     	return GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices().length-1;
     }
     public static void becomeVisible() { frame.setVisible(true); }
