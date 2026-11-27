@@ -1,0 +1,14 @@
+{
+  "galaxySize": "small",
+  "draftSeed": 42,
+  "endpoints": {
+    "local": { "baseUrl": "http://127.0.0.1:11434/v1" }
+  },
+  "seats": [
+    { "type": "llm", "name": "SHODAN", "preset": "shodan", "endpoint": "local", "model": "replace-with-your-model" },
+    { "type": "llm", "name": "GLaDOS", "preset": "glados", "endpoint": "local", "model": "replace-with-your-model" },
+    { "type": "llm", "name": "Skynet", "preset": "skynet", "endpoint": "local", "model": "replace-with-your-model" },
+    { "type": "llm", "name": "Lt. Cmdr. Data", "preset": "data", "endpoint": "local", "model": "replace-with-your-model" },
+    { "type": "llm", "name": "EDI", "preset": "edi", "endpoint": "local", "model": "replace-with-your-model" }
+  ]
+}

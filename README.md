@@ -47,6 +47,20 @@ java -jar target/rotp-Fusion-2026-11-27.jar --headless --galaxy-size small --opp
 
 Use the filename produced by your build. A single AI name applies to every empire. A comma-separated list assigns one AI per empire, starting with empire zero. Run with `--headless --help` for supported names and sizes. Exit codes are 0 for success, 2 for invalid arguments, and 1 for a simulation error.
 
+### Run a match with LLM leaders
+
+Copy `examples/leader-match.json` and set each seat's model to an identifier served by its endpoint. The example includes five leaders. For a duel, keep two seats. Use `{"type":"fusion"}` for a stock opponent.
+
+```sh
+java -jar target/rotp-Fusion-2026-11-27.jar --headless --match examples/leader-match.json --record leaders.rotpreplay
+```
+
+Each named endpoint supplies a `baseUrl` for the OpenAI-compatible chat completions API and an optional `apiKeyEnv` naming an environment variable. Each LLM seat specifies a name, endpoint, model and one persona source. Use `preset` for one of the five included voices, `promptFile` for a text file relative to the match JSON, or `prompt` for inline text. The draft seed resolves competing race preferences. Galaxy generation uses the game's normal settings.
+
+Leaders receive a private briefing on turn one, every fifth turn after that, and when they meet an empire, enter a war, lose a colony, or receive mail. They can allocate research, select an available technology, assign a fleet, and negotiate with known empires. Mail arrives on the next turn. Trade, pacts, alliances and peace require agreement. Fusion handles routine empire operations. After two failed requests, a leader keeps its existing orders or takes an available race during the draft.
+
+The desktop replay journal includes the draft, strategy summaries, orders and diplomatic exchanges. Opening the replay or exporting its video again works offline.
+
 ### Record and replay a match
 
 Every completed headless match writes a game recording and a silent 1080p H.264 territory video under `replays/` in the working directory. Install FFmpeg with the libx264 encoder and make `ffmpeg` available on PATH. Use `--record` to choose the recording path and the companion MP4 basename:

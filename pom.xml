@@ -75,6 +75,11 @@
 
 	<!-- All the dependencies Declaration -->
 	<dependencies>
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>2.13.2</version>
+		</dependency>
 		<!-- Base and modders ROTP dependencies -->
 		<dependency>
 			<groupId>org.apache.commons</groupId>

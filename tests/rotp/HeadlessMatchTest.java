@@ -143,6 +143,10 @@ class HeadlessMatchTest {
         assertTrue(run(2, "rotp.Launcher", "--headless", "--opponents", "1000").contains("Too many opponents"));
     }
 
+    @Test void scriptedLeadersDirectRealEmpires() throws Exception {
+        run(0, getClass().getName(), "leaders");
+    }
+
     @Test void aiRosterSurvivesLossOfFirstEmpire() throws Exception {
         run(0, getClass().getName());
     }
@@ -157,6 +161,11 @@ class HeadlessMatchTest {
             System.exit(0);
         }
         var options = RulesetManager.current().newOptions();
+        if (args.length == 1 && args[0].equals("leaders")) {
+            rotp.leader.ScriptedLeaders.run(Path.of("."), options,
+                    () -> HeadlessMatch.start(options, 2, new String[]{"fusion"}));
+            System.exit(0);
+        }
         var session = HeadlessMatch.start(options, 2, new String[]{"base", "modnar", "fusion"});
         var galaxy = session.galaxy();
         if (args.length > 0) {

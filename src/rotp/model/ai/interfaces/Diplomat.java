@@ -37,6 +37,8 @@ public interface Diplomat {
     boolean canOfferDiplomaticTreaties(Empire e);
     boolean canOfferTradeTreaty(Empire e);
     boolean canExchangeTechnology(Empire e);
+    boolean canOfferPact(Empire e);
+    boolean canOfferAlliance(Empire e);
     boolean canOfferAid(Empire e);
     boolean canDeclareWar(Empire e);
     boolean canThreaten(Empire e);

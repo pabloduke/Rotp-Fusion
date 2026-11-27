@@ -422,6 +422,7 @@ public class AIDiplomat implements Base, Diplomat {
     }
     @Override
     public DiplomaticReply receiveOfferTrade(Empire requestor, int level) {
+        if (rotp.leader.LeaderDiplomacy.defer(empire, requestor, "trade/" + level)) return null;
         // if the AI is asking the player, create an OfferTrade notification
         log(empire.name(), " receiving offer trade from: ", requestor.name(), "  for:", str(level), " BC");
         if (empire.isPlayerControlled()) {
@@ -542,6 +543,7 @@ public class AIDiplomat implements Base, Diplomat {
     private boolean canOfferPeaceTreaty(Empire e) { return diplomats(id(e)) && empire.atWarWith(id(e)); }
     @Override
     public DiplomaticReply receiveOfferPeace(Empire requestor) {
+        if (rotp.leader.LeaderDiplomacy.defer(empire, requestor, "peace")) return null;
         log(empire.name(), " receiving offer of Peace from: ", requestor.name());
         if (empire.isPlayerControlled()) {
             DiplomaticNotification.create(requestor.viewForEmpire(empire), DialogueManager.OFFER_PEACE);
@@ -608,6 +610,7 @@ public class AIDiplomat implements Base, Diplomat {
 
     @Override
     public DiplomaticReply receiveOfferPact(Empire requestor) {
+        if (rotp.leader.LeaderDiplomacy.defer(empire, requestor, "pact")) return null;
         log(empire.name(), " receiving offer of Pact from: ", requestor.name());
         EmpireView v = empire.viewForEmpire(requestor);
         if (empire.isPlayerControlled()) {
@@ -669,6 +672,7 @@ public class AIDiplomat implements Base, Diplomat {
     }
     @Override
     public DiplomaticReply receiveOfferAlliance(Empire requestor) {
+        if (rotp.leader.LeaderDiplomacy.defer(empire, requestor, "alliance")) return null;
         log(empire.name(), " receiving offer of Alliance from: ", requestor.name());
         if (empire.isPlayerControlled()) {
             DiplomaticNotification.create(requestor.viewForEmpire(empire), DialogueManager.OFFER_ALLIANCE);
@@ -812,6 +816,7 @@ public class AIDiplomat implements Base, Diplomat {
     }
     @Override
     public DiplomaticReply receiveOfferJointWar(Empire requestor, Empire target) {
+        if (rotp.leader.LeaderDiplomacy.forwardJointWarRequest(empire, requestor, target)) return null;
         log(empire.name(), " receiving offer of Joint War from: ", requestor.name());
         if (empire.isPlayerControlled()) {
             DiplomaticNotification.create(requestor.viewForEmpire(empire), DialogueManager.OFFER_JOINT_WAR, target);

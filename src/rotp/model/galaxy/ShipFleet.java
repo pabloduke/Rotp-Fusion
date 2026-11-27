@@ -555,6 +555,7 @@ public class ShipFleet extends FleetBase {
         return isActive() && !inTransit();
     }
     public boolean canSend() {
+        if (rotp.leader.LeaderOrders.assigned(this)) return false;
         return isActive() && (!inTransit() || isRetreatingThisTurn() || isRalliedThisTurn() || isOrbiting() || empire().tech().hyperspaceCommunications());
     }
 	private boolean allowedToRetreatTo(int id)	{
