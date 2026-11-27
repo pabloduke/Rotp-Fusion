@@ -104,7 +104,7 @@ public class NoticeMessage {
         repaint();
     }
     public static void repaint() {
-        if (redisplay()) 
+        if (!rotp.Launcher.headless() && redisplay())
             RotPUI.instance().repaint();
     }
 }

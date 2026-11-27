@@ -146,10 +146,10 @@ public interface Base extends InputEventUtil {
         GameSession.var(key, value);
     }
     public default int scaled(int i) {
-        return RotPUI.scaledSize(i);
+        return rotp.Launcher.headless() ? i : RotPUI.scaledSize(i);
     }
     public default int unscaled(int i) {
-        return RotPUI.unscaledSize(i);
+        return rotp.Launcher.headless() ? i : RotPUI.unscaledSize(i);
     }
     public default void mapClick()    { playAudioClip("MapClick"); }
     public default void buttonClick() { playAudioClip("ButtonClick"); }

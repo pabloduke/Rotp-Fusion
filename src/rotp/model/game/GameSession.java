@@ -1215,7 +1215,7 @@ public final class GameSession implements Base, Serializable {
     }
     private void startGame(IGameOptions newGameOptions, ControllerRegistry registry,
             rotp.multiplayer.hotseat.HotSeatSetup setup, rotp.multiplayer.pbem.PlayByEmail byEmail) {
-        stopCurrentGame();
+        if (!rotp.Launcher.headless()) stopCurrentGame();
         hotSeatSetup = setup;
         playByEmail = byEmail;
         playByEmailSentFile = null;
@@ -1243,7 +1243,7 @@ public final class GameSession implements Base, Serializable {
         sabotageDecisionAdapter = null;
         turnNotificationSink = null;
 
-        options(newGameOptions.copyAllOptions());
+        options(rotp.Launcher.headless() ? newGameOptions : newGameOptions.copyAllOptions());
 		rulesetManager().setAsGameMode();
     	instance().getGovernorOptions().gameStarted();
         if (setup != null) hotSeatPolicies = new rotp.multiplayer.hotseat.HotSeatPolicies();
@@ -1267,8 +1267,10 @@ public final class GameSession implements Base, Serializable {
             clearShipsConstructed();
             clearSpyActivity();
             galaxy().startGame();
-            saveRecentSession();
-            saveBackupSession(1);
+            if (!rotp.Launcher.headless()) {
+                saveRecentSession();
+                saveBackupSession(1);
+            }
         }
     }
     // BR: For Restart with new options

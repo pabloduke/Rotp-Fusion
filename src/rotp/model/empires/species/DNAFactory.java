@@ -798,6 +798,7 @@ public class DNAFactory extends SpeciesSettings {
 	private static boolean isFilled(String value)	{ return value != null && !value.isEmpty() && !value.startsWith("_"); }
 	private File[] loadListing()					{ return loadListing(true); }
 	private File[] loadListing(boolean tryToCopy)	{
+		if (rotp.Launcher.headless()) return new File[0];
 		boolean isJarPath = IMainOptions.speciesDirectory.isJarPath();
 		log("DNAFactory.loadListing Species Directory is Jar Path = " + isJarPath);
 		File speciesDir = new File(speciesDirectoryPath());

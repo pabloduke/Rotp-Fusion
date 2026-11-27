@@ -233,7 +233,7 @@ public interface IGameOptions extends IModOptions {
     // AI SubSet Builder: These sequences can be changed to fit GUI requirements
     public static AIList optionalAIset() {
     	AIList list = new AIList();
-    	if (!showAllAI.get())
+        if (!rotp.Launcher.headless() && !showAllAI.get())
     		return list;
     	list.add(baseAI);
     	list.add(modnarAI);

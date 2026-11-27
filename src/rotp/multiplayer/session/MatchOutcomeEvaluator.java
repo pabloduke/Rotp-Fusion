@@ -18,6 +18,8 @@ public final class MatchOutcomeEvaluator {
         if (session.controllerRegistry() == null || session.galaxy() == null)
             throw new IllegalStateException("A rostered galaxy is required");
 
+        boolean aiMatch = !session.controllerRegistry().seats().isEmpty() && session.controllerRegistry().seats().stream()
+                .noneMatch(seat -> seat.controllerType() == PlayerSeat.ControllerType.HUMAN);
         List<Empire> active = session.galaxy().activeEmpires();
         Set<Integer> winnerIds = new HashSet<>();
         MatchOutcome.Cause cause = MatchOutcome.Cause.ONGOING;
@@ -47,7 +49,7 @@ public final class MatchOutcomeEvaluator {
             if (cause == MatchOutcome.Cause.ONGOING
                     && !session.options().noAllianceCouncil()) {
                 for (PlayerSeat seat : session.controllerRegistry().seats()) {
-                    if (seat.controllerType() != PlayerSeat.ControllerType.HUMAN)
+                    if (!aiMatch && seat.controllerType() != PlayerSeat.ControllerType.HUMAN)
                         continue;
                     Empire candidate = session.galaxy().empire(seat.empireId());
                     if (candidate == null || candidate.extinct())
@@ -76,13 +78,13 @@ public final class MatchOutcomeEvaluator {
                 anyHumanAlive |= empire != null && !empire.extinct();
             }
         }
-        if (!anyHumanAlive && cause == MatchOutcome.Cause.ONGOING)
+        if (!aiMatch && !anyHumanAlive && cause == MatchOutcome.Cause.ONGOING)
             cause = MatchOutcome.Cause.NO_HUMANS_REMAIN;
 
         boolean finished = cause != MatchOutcome.Cause.ONGOING;
         Map<String, MatchOutcome.SeatResult> results = new HashMap<>();
         for (PlayerSeat seat : session.controllerRegistry().seats()) {
-            if (seat.controllerType() != PlayerSeat.ControllerType.HUMAN)
+            if (!aiMatch && seat.controllerType() != PlayerSeat.ControllerType.HUMAN)
                 continue;
             Empire empire = session.galaxy().empire(seat.empireId());
             MatchOutcome.SeatResult result;

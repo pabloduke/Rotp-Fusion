@@ -115,6 +115,7 @@ final class GalaxyTextShape extends GalaxyShape {
 		return list;
 	}
 	private static List<String> getShapeOption1List() {
+		if (rotp.Launcher.headless()) return List.of("ROTP");
 		List<String> list = new ArrayList<>();
 		// list.add(opts.selectedHomeWorldName());
 		String path = Rotp.jarPath();

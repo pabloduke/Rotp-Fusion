@@ -132,7 +132,8 @@ public final class GalaxyFactory implements Base {
 		long tm3 = System.currentTimeMillis();
 		log(str(g.numStarSystems()) ," Systems, ",str(Planet.COUNT)," Planets: "+(tm3-tm2)+"ms");
 		init(g, tm3);
-		opts.saveOptionsToFile(GAME_OPTIONS_FILE);
+		if (!rotp.Launcher.headless())
+			opts.saveOptionsToFile(GAME_OPTIONS_FILE);
 		return g;
 	}
 	private void showAI(Galaxy g) {

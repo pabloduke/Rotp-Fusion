@@ -36,6 +36,16 @@ mvn clean package -Dmaven.javadoc.skip=true
 java -jar target/rotp-<timestamp>-mini.jar
 ```
 
+### Headless AI matches
+
+Run the full or mini JAR with `--headless` for a small Fusion AI duel. The simulation runs to victory and prints the final turn, victory condition, and winners. It does not require a display or write game saves.
+
+```sh
+java -jar target/rotp-Fusion-2026-11-27.jar --headless --galaxy-size small --opponents 3 --ais fusion,base,modnar,rookie
+```
+
+Use the filename produced by your build. A single AI name applies to every empire. A comma-separated list assigns one AI per empire, starting with empire zero. Run with `--headless --help` for supported names and sizes. Exit codes are 0 for success, 2 for invalid arguments, and 1 for a simulation error.
+
 # Other Links
 [Official website](https://www.remnantsoftheprecursors.org/) <br/>
 [Community subreddit](https://www.reddit.com/r/rotp/) <br/>
