@@ -49,7 +49,23 @@ Use the filename produced by your build. A single AI name applies to every empir
 
 ### Run a match with LLM leaders
 
-Copy `examples/leader-match.json` and set each seat's model to an identifier served by its endpoint. The example includes five leaders. For a duel, keep two seats. Use `{"type":"fusion"}` for a stock opponent.
+To play SHODAN against Fusion using your Codex CLI login, put `codex` on PATH, sign in with `codex login`, and run:
+
+```sh
+java -jar target/rotp-Fusion-2026-11-27.jar --headless --match examples/codex-duel.json --record codex-duel.rotpreplay
+```
+
+A seat with `"type": "codex"` uses `gpt-5.6-terra` with `low` reasoning by default. Set `model` or `reasoningEffort` on a seat to override either setting independently. The game runs a fresh `codex exec` for the race draft and each briefing, sends the persona and that empire’s information on stdin, and validates the JSON reply against the legal choices. The draft journal records the model and effort used. Codex seats use the installed CLI's credentials and can share a match with HTTP-backed or Fusion seats.
+
+To play SHODAN (GPT-5.6 Terra Low) against GLaDOS (local Gemma 4), start Ollama with `mo-shakib/gemma4-e4b-uncensored:q4_k_m` installed and run the mixed match:
+
+```sh
+java -jar target/rotp-Fusion-2026-11-27.jar --headless --match examples/shodan-vs-glados.json --record shodan-vs-glados.rotpreplay
+```
+
+The example connects to Ollama at `127.0.0.1:11434` and sets `structuredOutput` on that endpoint so Gemma receives the JSON schema for each decision. If your installation uses another Gemma 4 tag, change the GLaDOS seat's `model` to the name shown by `ollama list`.
+
+For an OpenAI-compatible HTTP endpoint, copy `examples/leader-match.json` and set each seat's model to an identifier served by its endpoint. The example includes five leaders. For a duel, keep two seats. Use `{"type":"fusion"}` for a stock opponent.
 
 ```sh
 java -jar target/rotp-Fusion-2026-11-27.jar --headless --match examples/leader-match.json --record leaders.rotpreplay
@@ -63,7 +79,7 @@ The desktop replay journal includes the draft, strategy summaries, orders and di
 
 ### Record and replay a match
 
-Every completed headless match writes a game recording and a silent 1080p H.264 territory video under `replays/` in the working directory. Install FFmpeg with the libx264 encoder and make `ffmpeg` available on PATH. Use `--record` to choose the recording path and the companion MP4 basename:
+Headless matches save the recording and a silent 1080p H.264 territory video in `replays/` under the working directory by default. Use `--record duel.rotpreplay` to name both files, or supply a path with a directory to choose another location. Video export requires FFmpeg with the libx264 encoder on PATH.
 
 ```sh
 java -jar target/rotp-Fusion-2026-11-27.jar --headless --ais fusion,xilmi --record duel.rotpreplay
@@ -76,7 +92,7 @@ Select **Territory** in the replay window to view the same historical borders. E
 To regenerate a video with the same game build after a match or an encoder failure:
 
 ```sh
-java -jar target/rotp-Fusion-2026-11-27.jar --export-replay duel.rotpreplay
+java -jar target/rotp-Fusion-2026-11-27.jar --export-replay replays/duel.rotpreplay
 ```
 
 Recordings include a compressed game snapshot and observer data for each turn. Playback reads the recorded observer data directly and requires no simulation or AI calls.

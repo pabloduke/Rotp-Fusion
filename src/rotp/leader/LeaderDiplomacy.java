@@ -27,13 +27,13 @@ public final class LeaderDiplomacy implements AutoCloseable {
             var used = new HashSet<String>();
             var answers = new HashSet<Integer>();
             var actions = json.getAsJsonArray("diplomacy");
-            if (actions.size() > 16) throw new IllegalArgumentException("Too many diplomatic actions");
+            if (actions.size() > 16) throw new LeaderClient.InvalidDecision("Too many diplomatic actions");
             for (var element : actions) {
                 var object = element.getAsJsonObject();
                 String key = LeaderBriefing.text(object, "choice");
                 Choice choice = choices.get(key);
                 if (choice == null || !used.add(key) || choice.offer > 0 && !answers.add(choice.offer))
-                    throw new IllegalArgumentException("Unknown or conflicting diplomatic choice");
+                    throw new LeaderClient.InvalidDecision("Unknown or conflicting diplomatic choice");
                 result.add(new Action(key, LeaderBriefing.text(object, "text")));
             }
             return result;

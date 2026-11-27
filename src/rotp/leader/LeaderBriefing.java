@@ -116,7 +116,7 @@ final class LeaderBriefing {
         var v = json.get(key);
         if (v == null || !v.isJsonPrimitive() || !v.getAsJsonPrimitive().isString()
                 || v.getAsString().isBlank() || v.getAsString().length() > 1600)
-            throw new IllegalArgumentException("Expected short text in " + key);
+            throw new LeaderClient.InvalidDecision("Expected short text in " + key);
         return v.getAsString();
     }
 
@@ -125,17 +125,17 @@ final class LeaderBriefing {
         int[] allocation = null;
         if (json.has("allocation")) {
             var values = json.getAsJsonArray("allocation");
-            if (values.size() != 6) throw new IllegalArgumentException("Expected six research allocations");
+            if (values.size() != 6) throw new LeaderClient.InvalidDecision("Expected six research allocations");
             allocation = new int[6];
             for (int i = 0; i < 6; i++) {
                 var value = values.get(i).getAsJsonPrimitive();
-                if (!value.isNumber()) throw new IllegalArgumentException("Expected a numeric allocation");
+                if (!value.isNumber()) throw new LeaderClient.InvalidDecision("Expected a numeric allocation");
                 allocation[i] = value.getAsBigDecimal().intValueExact();
                 if (allocation[i] > 0 && empire.tech().category(i).researchCompleted())
-                    throw new IllegalArgumentException("Field already completed");
-                if (allocation[i] < 0 || allocation[i] > 60) throw new IllegalArgumentException("Allocation outside 0..60");
+                    throw new LeaderClient.InvalidDecision("Field already completed");
+                if (allocation[i] < 0 || allocation[i] > 60) throw new LeaderClient.InvalidDecision("Allocation outside 0..60");
             }
-            if (Arrays.stream(allocation).sum() != 60) throw new IllegalArgumentException("Allocation must sum to 60");
+            if (Arrays.stream(allocation).sum() != 60) throw new LeaderClient.InvalidDecision("Allocation must sum to 60");
         }
         var orders = new ArrayList<String>();
         var usedFleets = new HashSet<ShipFleet>();
@@ -144,7 +144,7 @@ final class LeaderBriefing {
             String key = value.getAsString();
             boolean valid = moves.containsKey(key) ? usedFleets.add(moves.get(key).fleet)
                     : technologies.containsKey(key) && usedFields.add(technologies.get(key));
-            if (!valid) throw new IllegalArgumentException("Unknown or conflicting order");
+            if (!valid) throw new LeaderClient.InvalidDecision("Unknown or conflicting order");
             orders.add(key);
         }
         return new Decision(summary, allocation, orders, diplomacy.parse(json));

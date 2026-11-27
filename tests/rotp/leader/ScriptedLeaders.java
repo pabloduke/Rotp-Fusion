@@ -19,7 +19,7 @@ public class ScriptedLeaders {
         var acceptanceAttempts = new int[1];
         var failedDrafts = new int[1];
         var destination = new int[]{-1};
-        LeaderClient client = (seat, persona, prompt) -> {
+        LeaderClient client = (seat, persona, request, prompt) -> {
             if (prompt.startsWith("Rank") && seat.name().equals("c")) {
                 failedDrafts[0]++;
                 throw new java.net.http.HttpTimeoutException("Scripted timeout");
@@ -28,6 +28,8 @@ public class ScriptedLeaders {
                     "{\"preferences\":[\"RACE_PSILON\",\"RACE_HUMAN\"],\"summary\":\"I choose discovery.\"}").getAsJsonObject();
             var view = JsonParser.parseString(prompt.substring(0, prompt.indexOf('\n'))).getAsJsonObject();
             if (seat.name().equals("a") && invalid[0]++ == 0) return new JsonObject();
+            if (seat.name().equals("a") && invalid[0] == 2)
+                assertTrue(prompt.contains("Expected short text in summary"));
             briefings.computeIfAbsent(seat.name(), s -> new ArrayList<>()).add(view);
             var fields = new JsonObject();
             fields.addProperty("summary", "Protect our colonies");

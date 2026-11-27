@@ -1,0 +1,11 @@
+{
+  "galaxySize": "tiny",
+  "draftSeed": 42,
+  "endpoints": {
+    "ollama": { "baseUrl": "http://127.0.0.1:11434/v1", "structuredOutput": true }
+  },
+  "seats": [
+    { "type": "codex", "name": "SHODAN", "preset": "shodan", "model": "gpt-5.6-terra", "reasoningEffort": "low" },
+    { "type": "llm", "name": "GLaDOS", "preset": "glados", "endpoint": "ollama", "model": "mo-shakib/gemma4-e4b-uncensored:q4_k_m" }
+  ]
+}

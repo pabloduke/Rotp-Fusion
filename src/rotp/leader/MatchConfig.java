@@ -9,11 +9,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /** Paths in a match file are relative to that file. Credentials stay outside the match and replay. */
 public record MatchConfig(String galaxySize, long draftSeed, Map<String, Endpoint> endpoints, List<Seat> seats) {
-    public record Endpoint(String baseUrl, String apiKeyEnv) {
+    public record Endpoint(String baseUrl, String apiKeyEnv, boolean structuredOutput) {
+        public Endpoint(String baseUrl, String apiKeyEnv) { this(baseUrl, apiKeyEnv, false); }
+
         URI chatUri() {
             URI uri = URI.create(requireText(baseUrl, "baseUrl").replaceAll("/+$", "") + "/chat/completions");
             if (!Set.of("http", "https").contains(String.valueOf(uri.getScheme())) || uri.getHost() == null
@@ -28,8 +31,24 @@ public record MatchConfig(String galaxySize, long draftSeed, Map<String, Endpoin
     }
 
     public record Seat(String type, String name, String endpoint, String model, String preset,
-                       String promptFile, String prompt) {
-        public boolean isLeader() { return "llm".equals(type); }
+                       String promptFile, String prompt, String reasoningEffort) {
+        public Seat {
+            if ("codex".equals(type)) {
+                model = Objects.requireNonNullElse(model, "gpt-5.6-terra");
+                reasoningEffort = Objects.requireNonNullElse(reasoningEffort, "low");
+            }
+        }
+
+        public Seat(String type, String name, String endpoint, String model, String preset, String promptFile, String prompt) {
+            this(type, name, endpoint, model, preset, promptFile, prompt, null);
+        }
+
+        public boolean isCodex() { return "codex".equals(type); }
+        public boolean isLeader() { return isCodex() || "llm".equals(type); }
+        String modelLabel() {
+            if (!isCodex()) return model;
+            return "Codex CLI, " + model + ", reasoning " + reasoningEffort;
+        }
 
         String loadPrompt(Path directory) throws IOException {
             int sources = (preset == null ? 0 : 1) + (promptFile == null ? 0 : 1) + (prompt == null ? 0 : 1);
@@ -57,9 +76,17 @@ public record MatchConfig(String galaxySize, long draftSeed, Map<String, Endpoin
         requireText(config.galaxySize, "galaxySize");
         for (var seat : config.seats) {
             if (seat == null || !("fusion".equals(seat.type) || seat.isLeader()))
-                throw new IllegalArgumentException("Expected seat type fusion or llm");
+                throw new IllegalArgumentException("Expected seat type fusion, llm or codex");
+            if (seat.reasoningEffort != null && (!seat.isCodex() || !Set.of("none", "minimal", "low", "medium",
+                    "high", "xhigh", "max", "ultra").contains(seat.reasoningEffort)))
+                throw new IllegalArgumentException("Invalid reasoningEffort for seat " + seat.name);
             if (seat.isLeader()) {
                 requireText(seat.name, "seat name");
+                if (seat.isCodex()) {
+                    if (seat.endpoint != null) throw new IllegalArgumentException("A codex seat uses the CLI login; omit endpoint");
+                    requireText(seat.model, "model");
+                    continue;
+                }
                 requireText(seat.model, "model");
                 requireText(seat.endpoint, "endpoint");
                 if (config.endpoints == null || config.endpoints.get(seat.endpoint) == null)

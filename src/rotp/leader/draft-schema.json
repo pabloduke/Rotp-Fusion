@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "preferences": { "type": "array", "items": { "type": "string" } },
+    "summary": { "type": "string" }
+  },
+  "required": ["preferences", "summary"],
+  "additionalProperties": false
+}

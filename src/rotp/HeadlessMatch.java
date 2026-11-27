@@ -71,10 +71,12 @@ final class HeadlessMatch {
                 System.err.println("Too many opponents for " + size);
                 return 2;
             }
-            if (recording == null) {
-                var directory = java.nio.file.Files.createDirectories(Path.of("replays"));
-                recording = directory.resolve("match-" + java.util.UUID.randomUUID() + ".rotpreplay");
-            }
+            if (recording == null)
+                recording = Path.of("match-" + java.util.UUID.randomUUID() + ".rotpreplay");
+            if (recording.getParent() == null && !recording.isAbsolute())
+                recording = Path.of("replays").resolve(recording);
+            if (recording.getParent() != null)
+                java.nio.file.Files.createDirectories(recording.getParent());
             LeaderMatch leaders;
             try {
                 leaders = match == null ? null : new LeaderMatch(match, matchFile);

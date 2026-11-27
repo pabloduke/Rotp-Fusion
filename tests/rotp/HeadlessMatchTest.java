@@ -50,9 +50,9 @@ class HeadlessMatchTest {
     }
 
     @Test void recordsEveryTurnThroughThePrintedVictory() throws Exception {
-        Path path = directory.resolve("MixedCase.rotpreplay");
-        String output = run(0, "rotp.Launcher", "--headless", "--record", path.toString());
-        assertTrue(Files.size(directory.resolve("MixedCase.mp4")) > 0);
+        Path path = directory.resolve("replays/MixedCase.rotpreplay");
+        String output = run(0, "rotp.Launcher", "--headless", "--record", "MixedCase.rotpreplay");
+        assertTrue(Files.size(path.resolveSibling("MixedCase.mp4")) > 0);
         String verified = run(0, getClass().getName(), "verify", path.toString());
         assertTrue(output.contains(verified.lines().filter(line -> line.startsWith("Turn ")).findFirst().orElseThrow()));
     }

@@ -1,0 +1,8 @@
+{
+  "galaxySize": "tiny",
+  "draftSeed": 42,
+  "seats": [
+    { "type": "codex", "name": "SHODAN", "preset": "shodan" },
+    { "type": "fusion" }
+  ]
+}

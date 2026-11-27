@@ -31,7 +31,7 @@ public final class LeaderMatch implements AutoCloseable {
     }
 
     public LeaderMatch(MatchConfig config, Path file) throws IOException {
-        this(config, file, LeaderClient.http(config));
+        this(config, file, LeaderClient.forMatch(config));
     }
 
     LeaderMatch(MatchConfig config, Path file, LeaderClient client) throws IOException {
@@ -45,18 +45,22 @@ public final class LeaderMatch implements AutoCloseable {
         diplomacy = new LeaderDiplomacy(leaders.keySet());
     }
 
-    private <T> T request(int id, String prompt, Function<JsonObject, T> parse) throws InterruptedException {
+    private <T> T request(int id, LeaderClient.Request kind, String prompt, Function<JsonObject, T> parse) throws InterruptedException {
         var leader = leaders.get(id);
         String feedback = "";
         for (int attempt = 1; attempt <= 2; attempt++) {
             try {
-                var json = client.ask(leader.seat, leader.persona, prompt + feedback);
+                var json = client.ask(leader.seat, leader.persona, kind, prompt + feedback);
                 return parse.apply(json);
             } catch (IOException | RuntimeException invalid) {
                 // An endpoint can echo private credentials or arbitrary content in errors.
-                String reason = invalid.getClass().getSimpleName();
+                boolean validation = invalid instanceof LeaderClient.InvalidDecision;
+                String reason = validation || invalid instanceof CodexExec.Failure
+                        ? invalid.getMessage() : invalid.getClass().getSimpleName();
                 journal.add(new Entry(id, "Leader request failed", "Attempt " + attempt + ": " + reason));
-                feedback = "\nThe previous attempt failed. Return one JSON object matching the requested fields and legal choices.";
+                feedback = "\nThe previous attempt failed. "
+                        + (validation ? reason + ". " : "")
+                        + "Return one JSON object matching the requested fields and legal choices.";
             }
         }
         return null;
@@ -75,14 +79,14 @@ public final class LeaderMatch implements AutoCloseable {
                 + "\"summary\":\"short in-character explanation\"}. Available races: " + new Gson().toJson(traits);
         var drafts = new HashMap<Integer, Draft>();
         for (int id : leaders.keySet()) {
-            drafts.put(id, request(id, prompt, json -> {
+            drafts.put(id, request(id, LeaderClient.Request.DRAFT, prompt, json -> {
                 var preferences = new LinkedHashSet<String>();
                 for (var item : json.getAsJsonArray("preferences")) {
                     String key = item.getAsString();
                     if (!traits.containsKey(key) || !preferences.add(key))
-                        throw new IllegalArgumentException("Invalid race preference");
+                        throw new LeaderClient.InvalidDecision("Rank distinct race IDs from the available races");
                 }
-                if (preferences.isEmpty()) throw new IllegalArgumentException("Rank at least one race");
+                if (preferences.isEmpty()) throw new LeaderClient.InvalidDecision("Rank at least one race");
                 return new Draft(List.copyOf(preferences), LeaderBriefing.text(json, "summary"));
             }));
         }
@@ -97,7 +101,7 @@ public final class LeaderMatch implements AutoCloseable {
             if (id == 0) options.selectedPlayerRace(race);
             else options.selectedOpponentRace(id - 1, race);
             var leader = leaders.get(id);
-            String identity = leader == null ? "Fusion" : leader.seat.name() + " (" + leader.seat.model() + ")";
+            String identity = leader == null ? "Fusion" : leader.seat.name() + " (" + leader.seat.modelLabel() + ")";
             String details = identity + " drafted " + race;
             if (draft != null) details += ". Ranked " + draft.preferences + ". " + draft.summary;
             journal.add(new Entry(id, "Race draft", details));
@@ -139,7 +143,7 @@ public final class LeaderMatch implements AutoCloseable {
             int id = entry.getKey();
             var brief = entry.getValue();
             journal.add(new Entry(id, "Leader briefing", brief.observations));
-            decisions.put(id, request(id, brief.prompt, brief::parse));
+            decisions.put(id, request(id, LeaderClient.Request.TURN, brief.prompt, brief::parse));
         }
         for (var event : journal) ReplayRecorder.event(event.kind, event.seat, -1, event.details);
         journal.clear();
