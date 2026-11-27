@@ -109,7 +109,7 @@ public final class RecordedGameViewer extends JDialog {
                 archive = new ReplayArchive(file);
                 int size = archive.size();
                 var initial = archive.frame(0);
-                var layout = new rotp.replay.ReplayMap(initial);
+                var layout = rotp.replay.ReplayMap.from(archive);
                 SwingUtilities.invokeLater(() -> { renderer = layout; count = size; display(0, initial); });
             } catch (Exception failure) { failed(failure); }
         });
@@ -168,7 +168,8 @@ public final class RecordedGameViewer extends JDialog {
         index = position;
         busy = false;
         if (index == count - 1) playing = false;
-        status.setText("Turn " + frame.turn() + "  " + frame.outcome());
+        var result = frame.result();
+        status.setText("Turn " + frame.turn() + (result == null ? "" : "  " + result.summary()));
         objects.setListData(frame.items().toArray(ReplayFrame.Item[]::new));
         events.setListData(frame.events().toArray(ReplayFrame.Event[]::new));
         details.setText("");

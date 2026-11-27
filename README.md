@@ -57,7 +57,7 @@ java -jar target/rotp-Fusion-2026-11-27.jar --headless --ais fusion,xilmi --reco
 
 After the match finishes, start the desktop game from the same build and select **Open Replay** on the game menu. Inspect systems, fleets, and empires on the galaxy map or in the object list. The turn journal contains orders, diplomatic exchanges, battles, and galaxy events. **Previous turn** and **Next turn** step while paused. **Play** advances automatically at the selected speed. Closing the viewer returns to the game menu.
 
-Select **Territory** in the replay window to view the same historical borders. Each star has a fixed region colored by its current owner. Uncolonized regions remain neutral. The video plays at 10 turns per second with one frame per turn, using the last snapshot when a turn has multiple entries.
+Select **Territory** in the replay window to view the same historical borders. Each star has a fixed region colored by its current owner. Uncolonized regions remain neutral. The legend counts current colonies. A gold ring marks a battle, bombardment, or invasion, and a double ring marks a change of colony owner. Rings fade over five turns. The final territory frame shows the victory condition and every winning empire. The exported MP4 also includes that result in its comment metadata. The video plays at 10 turns per second with one frame per turn, using the last snapshot when a turn has multiple entries.
 
 To regenerate a video with the same game build after a match or an encoder failure:
 

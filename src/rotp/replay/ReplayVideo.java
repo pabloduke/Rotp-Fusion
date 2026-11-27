@@ -33,11 +33,12 @@ public final class ReplayVideo {
     private static void encode(ReplayArchive archive, Path destination) throws IOException {
         var image = new BufferedImage(1920,1080,BufferedImage.TYPE_3BYTE_BGR);
         var bytes = ((DataBufferByte)image.getRaster().getDataBuffer()).getData();
-        var map = new ReplayMap(archive.frame(0));
+        var map = ReplayMap.from(archive);
+        var result = archive.frame(archive.size()-1).result();
         var process = new ProcessBuilder("ffmpeg","-hide_banner","-loglevel","error","-y","-f","rawvideo",
                 "-pixel_format","bgr24","-video_size","1920x1080","-framerate","10","-i","pipe:0",
                 "-c:v","libx264","-threads","4","-preset","veryfast","-pix_fmt","yuv420p","-movflags","+faststart",
-                destination.toString()).redirectError(ProcessBuilder.Redirect.INHERIT).start();
+                "-metadata", "comment=" + (result == null ? "" : result.summary()), destination.toString()).redirectError(ProcessBuilder.Redirect.INHERIT).start();
         var graphics = image.createGraphics();
         try {
             try (var input = process.getOutputStream()) {

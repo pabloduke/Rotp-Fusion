@@ -9,6 +9,26 @@ import rotp.multiplayer.session.MatchOutcome;
 
 /** Detached observer data. Playback has no dependency on a running GameSession. */
 public record ReplayFrame(int turn, String outcome, List<Item> items, List<Event> events) {
+    /** The archive stores the victory cause and the winning seats' names together. */
+    public record Result(String condition, String winners) {
+        public String summary() {
+            return condition + " — " + (winners.isBlank() ? "No recorded winner" : "Won by " + winners);
+        }
+    }
+
+    public Result result() {
+        if (outcome.isBlank()) return null;
+        String[] parts = outcome.split(" — ", 2);
+        String condition = switch (parts[0]) {
+            case "MILITARY" -> "Military victory";
+            case "MILITARY_ALLIANCE" -> "Military alliance victory";
+            case "COUNCIL" -> "Galactic Council victory";
+            case "NO_HUMANS_REMAIN" -> "No human empires remain";
+            default -> parts[0];
+        };
+        return new Result(condition, parts.length == 2 ? parts[1] : "");
+    }
+
     public record Item(String kind, String name, int empire, int color, float x, float y, String details) {
         @Override public String toString() { return name; }
     }
