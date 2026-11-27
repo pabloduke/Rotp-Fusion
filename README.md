@@ -23,7 +23,7 @@ On Debian / Ubuntu:
 
 ```
 sudo apt install vorbis-tools
-sudo apt install webp
+sudo apt install webp ffmpeg
 mvn clean package -Dmaven.javadoc.skip=true
 java -jar target/rotp-<timestamp>-mini.jar
 ```
@@ -32,6 +32,7 @@ On Fedora:
 
 ```
 sudo dnf install libwebp-tools vorbis-tools
+# Headless video export and its tests also require ffmpeg with libx264 and ffprobe.
 mvn clean package -Dmaven.javadoc.skip=true
 java -jar target/rotp-<timestamp>-mini.jar
 ```
@@ -48,13 +49,21 @@ Use the filename produced by your build. A single AI name applies to every empir
 
 ### Record and replay a match
 
-Add `--record <path>` to save a match, for example:
+Every completed headless match writes a game recording and a silent 1080p H.264 territory video under `replays/` in the working directory. Install FFmpeg with the libx264 encoder and make `ffmpeg` available on PATH. Use `--record` to choose the recording path and the companion MP4 basename:
 
 ```sh
 java -jar target/rotp-Fusion-2026-11-27.jar --headless --ais fusion,xilmi --record duel.rotpreplay
 ```
 
 After the match finishes, start the desktop game from the same build and select **Open Replay** on the game menu. Inspect systems, fleets, and empires on the galaxy map or in the object list. The turn journal contains orders, diplomatic exchanges, battles, and galaxy events. **Previous turn** and **Next turn** step while paused. **Play** advances automatically at the selected speed. Closing the viewer returns to the game menu.
+
+Select **Territory** in the replay window to view the same historical borders. Each star has a fixed region colored by its current owner. Uncolonized regions remain neutral. The video plays at 10 turns per second with one frame per turn, using the last snapshot when a turn has multiple entries.
+
+To regenerate a video with the same game build after a match or an encoder failure:
+
+```sh
+java -jar target/rotp-Fusion-2026-11-27.jar --export-replay duel.rotpreplay
+```
 
 Recordings include a compressed game snapshot and observer data for each turn. Playback reads the recorded observer data directly and requires no simulation or AI calls.
 

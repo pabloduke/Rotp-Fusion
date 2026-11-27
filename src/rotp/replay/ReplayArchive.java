@@ -36,6 +36,7 @@ public final class ReplayArchive implements Closeable {
         return new DataInputStream(new BufferedInputStream(zip.getInputStream(e)));
     }
 
+    public int turn(int index) { return turns[index]; }
     public int size() { return turns.length; }
     public ReplayFrame frame(int i) throws IOException {
         if (i < 0 || i >= size()) throw new IOException("Invalid frame " + i);

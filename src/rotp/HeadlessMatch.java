@@ -58,9 +58,13 @@ final class HeadlessMatch {
                 System.err.println("Too many opponents for " + size);
                 return 2;
             }
+            if (recording == null) {
+                var directory = java.nio.file.Files.createDirectories(Path.of("replays"));
+                recording = directory.resolve("match-" + java.util.UUID.randomUUID() + ".rotpreplay");
+            }
             var session = start(options, opponents, ais);
-            try (var recorder = recording == null ? null : new ReplayRecorder(recording, session)) {
-                if (recorder != null) recorder.capture();
+            try (var recorder = new ReplayRecorder(recording, session)) {
+                recorder.capture();
                 while (!session.matchOutcome().finished()) {
                     int turn = session.galaxy().currentTurn();
                     try {
@@ -71,12 +75,14 @@ final class HeadlessMatch {
                     }
                     if (turn == session.galaxy().currentTurn() && !session.matchOutcome().finished())
                         throw new IllegalStateException("Match stalled at turn " + turn + ": " + session.turnCheckpoint());
-                    if (recorder != null) recorder.capture();
+                    recorder.capture();
                 }
-                if (recorder != null) recorder.finish();
+                recorder.finish();
             } catch (java.io.IOException failure) {
                 throw new java.io.IOException("Cannot record " + recording + " at turn " + session.galaxy().currentTurn(), failure);
             }
+            System.out.println("Recording: " + recording.toAbsolutePath());
+            System.out.println("Video: " + rotp.replay.ReplayVideo.export(recording));
             var outcome = session.matchOutcome();
             System.out.println("Turn " + session.galaxy().currentTurn() + " — " + outcome.cause());
             for (var seat : session.controllerRegistry().seats())

@@ -41,11 +41,18 @@ class HeadlessMatchTest {
     @Test void cliPlaysToVictory() throws Exception {
         String result = run(0, "rotp.Launcher", "--headless");
         assertTrue(result.contains("Winner "), result);
+        try (var files = Files.list(directory.resolve("replays"))) {
+            var names = files.map(p -> p.getFileName().toString()).sorted().toList();
+            assertEquals(2, names.size());
+            assertTrue(names.get(0).endsWith(".mp4"));
+            assertEquals(names.get(0).replace(".mp4", ".rotpreplay"), names.get(1));
+        }
     }
 
     @Test void recordsEveryTurnThroughThePrintedVictory() throws Exception {
         Path path = directory.resolve("MixedCase.rotpreplay");
         String output = run(0, "rotp.Launcher", "--headless", "--record", path.toString());
+        assertTrue(Files.size(directory.resolve("MixedCase.mp4")) > 0);
         String verified = run(0, getClass().getName(), "verify", path.toString());
         assertTrue(output.contains(verified.lines().filter(line -> line.startsWith("Turn ")).findFirst().orElseThrow()));
     }

@@ -23,6 +23,8 @@ public final class RecordedGameViewer extends JDialog {
     private final JList<ReplayFrame.Event> events = new JList<>();
     private final JTextArea details = new JTextArea(5, 36);
     private final GalaxyMap map = new GalaxyMap();
+    private final JCheckBox territory = new JCheckBox("Territory");
+    private rotp.replay.ReplayMap renderer;
     private ReplayArchive archive;
     private ReplayFrame frame;
     private int index = -1, count;
@@ -40,7 +42,7 @@ public final class RecordedGameViewer extends JDialog {
                 ModalityType.APPLICATION_MODAL);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         var controls = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        for (Component control : new Component[]{previous, play, next, speed, status}) controls.add(control);
+        for (Component control : new Component[]{previous, play, next, speed, territory, status}) controls.add(control);
         add(controls, BorderLayout.NORTH);
         var tabs = new JTabbedPane();
         tabs.addTab("Galaxy objects", new JScrollPane(objects));
@@ -63,7 +65,8 @@ public final class RecordedGameViewer extends JDialog {
                 ReplayFrame.Item hit = null;
                 for (var item : frame.items()) {
                     if (item.kind().equals("Empire")) continue;
-                    double distance = map.point(item).distance(e.getPoint());
+                    if (territory.isSelected() && item.kind().equals("Fleet")) continue;
+                    double distance = renderer.point(item,map.getWidth(),map.getHeight(),territory.isSelected()).distance(e.getPoint());
                     if (distance <= nearest) { nearest = distance; hit = item; }
                 }
                 if (hit != null) {
@@ -77,6 +80,7 @@ public final class RecordedGameViewer extends JDialog {
             if (tabs.getSelectedIndex() == 0) inspectObject();
             else inspectEvent();
         });
+        territory.addActionListener(e -> map.repaint());
         previous.addActionListener(e -> step(-1));
         next.addActionListener(e -> step(1));
         play.addActionListener(e -> { playing = !playing; refreshControls(); });
@@ -105,7 +109,8 @@ public final class RecordedGameViewer extends JDialog {
                 archive = new ReplayArchive(file);
                 int size = archive.size();
                 var initial = archive.frame(0);
-                SwingUtilities.invokeLater(() -> { count = size; display(0, initial); });
+                var layout = new rotp.replay.ReplayMap(initial);
+                SwingUtilities.invokeLater(() -> { renderer = layout; count = size; display(0, initial); });
             } catch (Exception failure) { failed(failure); }
         });
     }
@@ -167,44 +172,19 @@ public final class RecordedGameViewer extends JDialog {
         objects.setListData(frame.items().toArray(ReplayFrame.Item[]::new));
         events.setListData(frame.events().toArray(ReplayFrame.Event[]::new));
         details.setText("");
-        map.updateBounds();
         map.repaint();
         refreshControls();
     }
 
     private final class GalaxyMap extends JPanel {
-        private float width, height;
         GalaxyMap() {
             setPreferredSize(new Dimension(600, 450));
             setBackground(new Color(14, 18, 32));
         }
-        void updateBounds() {
-            width = height = 1;
-            for (var item : frame.items()) {
-                width = Math.max(width, item.x());
-                height = Math.max(height, item.y());
-            }
-        }
-        Point point(ReplayFrame.Item item) {
-            double scale = Math.min((getWidth()-24) / width, (getHeight()-24) / height);
-            return new Point((int)((getWidth()-width*scale)/2 + item.x()*scale),
-                    (int)((getHeight()-height*scale)/2 + item.y()*scale));
-        }
         @Override protected void paintComponent(Graphics graphics) {
             super.paintComponent(graphics);
-            if (frame == null) return;
-            for (var item : frame.items()) {
-                if (item.kind().equals("Empire")) continue;
-                var p = point(item);
-                graphics.setColor(new Color(item.color()));
-                if (item.kind().equals("Fleet"))
-                    graphics.drawRect(p.x-5, p.y-5, 10, 10);
-                else graphics.fillOval(p.x-3, p.y-3, 7, 7);
-                if (item.equals(objects.getSelectedValue())) {
-                    graphics.setColor(Color.WHITE);
-                    graphics.drawOval(p.x-8, p.y-8, 16, 16);
-                }
-            }
+            if (frame != null)
+                renderer.draw((Graphics2D)graphics,getWidth(),getHeight(),frame,territory.isSelected(),objects.getSelectedValue());
         }
     }
 }
