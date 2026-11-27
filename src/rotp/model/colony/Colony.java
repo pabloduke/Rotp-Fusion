@@ -15,6 +15,7 @@
  */
 package rotp.model.colony;
 
+import rotp.replay.ReplayRecorder;
 import static rotp.model.colony.ColonySpendingCategory.MAX_TICKS;
 
 import java.awt.AlphaComposite;
@@ -852,7 +853,14 @@ public final class Colony implements Base, IMappedObject, Serializable {
         checkEcoAtClean();
 
         if (reallocationRequired)
-            empire().governorAI().setColonyAllocations(this);
+            setGovernorAllocations();
+    }
+    public void setGovernorAllocations() {
+        int[] before = ReplayRecorder.recording() ? allocation.clone() : null;
+        empire().governorAI().setColonyAllocations(this);
+        if (before != null && !java.util.Arrays.equals(before, allocation))
+            ReplayRecorder.event("Colony spending", empire().id, starSystem().id,
+                    "Ship, defense, industry, ecology, research: " + java.util.Arrays.toString(allocation));
     }
     void addFollowUpSpendingOrder(float orderAmt) {
         if (orderAmt <= 0)
@@ -1454,6 +1462,8 @@ public final class Colony implements Base, IMappedObject, Serializable {
             clearTransport();
         else {
             StarSystem oldDest = transport().destination();
+            if (ReplayRecorder.recording())
+                ReplayRecorder.event("Transport", empire().id, starSystem().id, pop + " population to #" + dest.id);
             transport().size(pop);
             transport().setDest(dest);
             transport().setDefaultTravelSpeed();
@@ -1580,6 +1590,8 @@ public final class Colony implements Base, IMappedObject, Serializable {
                 ev.embassy().declareWar();
         }
 
+        if (ReplayRecorder.recording())
+            ReplayRecorder.event("Invasion", tr.empId(), starSystem().id, tr.size() + " troops against " + empire().name());
         if (tech().subspaceInterdiction())
             pct /= 2;
 

@@ -629,6 +629,7 @@ public final class ShipCombatManager implements Base {
         if (logIncidents)
             results.logIncidents();
 
+        results.recordBattle();
 		combatAlreadyEnded = true;
         if (session().hotSeatInbox() != null) {
             for (Empire participant : results.empires()) {
@@ -728,6 +729,7 @@ public final class ShipCombatManager implements Base {
 
         addInitialStacks(emp1);
         addInitialStacks(emp2);
+        results.recordStartingForces();
         scanShips();
 
         // unless system has monster, remove any stacks that want to retreat
@@ -842,6 +844,7 @@ public final class ShipCombatManager implements Base {
             if (!st.destroyed())
                 addStackToCombat(st);
         }
+        results.recordStartingForces();
 
 		allowRetreat = true;
 		playerSelection(ShipBattleUI.ENTER_COMBAT);

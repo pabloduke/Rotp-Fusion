@@ -46,6 +46,18 @@ java -jar target/rotp-Fusion-2026-11-27.jar --headless --galaxy-size small --opp
 
 Use the filename produced by your build. A single AI name applies to every empire. A comma-separated list assigns one AI per empire, starting with empire zero. Run with `--headless --help` for supported names and sizes. Exit codes are 0 for success, 2 for invalid arguments, and 1 for a simulation error.
 
+### Record and replay a match
+
+Add `--record <path>` to save a match, for example:
+
+```sh
+java -jar target/rotp-Fusion-2026-11-27.jar --headless --ais fusion,xilmi --record duel.rotpreplay
+```
+
+After the match finishes, start the desktop game from the same build and select **Open Replay** on the game menu. Inspect systems, fleets, and empires on the galaxy map or in the object list. The turn journal contains orders, diplomatic exchanges, battles, and galaxy events. **Previous turn** and **Next turn** step while paused. **Play** advances automatically at the selected speed. Closing the viewer returns to the game menu.
+
+Recordings include a compressed game snapshot and observer data for each turn. Playback reads the recorded observer data directly and requires no simulation or AI calls.
+
 # Other Links
 [Official website](https://www.remnantsoftheprecursors.org/) <br/>
 [Community subreddit](https://www.reddit.com/r/rotp/) <br/>

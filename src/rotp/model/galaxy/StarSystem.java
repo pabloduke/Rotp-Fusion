@@ -15,6 +15,7 @@
  */
 package rotp.model.galaxy;
 
+import rotp.replay.ReplayRecorder;
 import static rotp.model.game.IBaseOptsTools.MOD_UI;
 
 import java.awt.AlphaComposite;
@@ -306,7 +307,11 @@ public final class StarSystem implements Base, Sprite, IMappedObject, Serializab
     public void clearEvent()                    { eventKey = null; }
 	public boolean hasPlague()					{ return RandomEventPlague.eventKey == eventKey; }
     public boolean hasMonster()                 { return monster != null; }
-    public void addEvent(StarSystemEvent e)     { events.add(e); }
+    public void addEvent(StarSystemEvent e)     {
+        events.add(e);
+        if (ReplayRecorder.recording())
+            ReplayRecorder.event("System history", e.owner(), id, e.description());
+    }
     public List<StarSystemEvent> events()       { return events; }
     public boolean abandoned()                  { return abandoned; }
     public void abandoned(boolean b) { 

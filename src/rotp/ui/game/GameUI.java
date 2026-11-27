@@ -130,7 +130,7 @@ public class GameUI  extends BasePanel implements MouseListener, MouseMotionList
     int fuzzSc = 2;
     int diff = s60;
     int languageX;
-    BaseText discussText, continueText, newGameText, loadGameText, saveGameText, settingsText, exitText, restartText;
+    BaseText replayText, discussText, continueText, newGameText, loadGameText, saveGameText, settingsText, exitText, restartText;
     BaseText versionText, manualText;
     BaseText developerText, artistText, graphicDsnrText, writerText, soundText, translatorText, slideshowText;
     BaseText shrinkText, enlargeText, winSizeText;
@@ -443,6 +443,7 @@ public class GameUI  extends BasePanel implements MouseListener, MouseMotionList
         exitText        = new BaseText(this, true, 45,   0, 610,  enabledC, disabledC, hovCol, depressCol, shadedC, 1, 1, 8);
         restartText     = new BaseText(this, true, 45,   0, 430,  enabledC, disabledC, hovCol, depressCol, shadedC, 1, 1, 8);
         versionText     = new BaseText(this, false,16,   5, -35,  enabledC,  enabledC, hovCol, depressCol, Color.black, 1, 0, 1);
+        replayText      = new BaseText(this, false,22,  16, -10, enabledC, disabledC, hovCol, depressCol, shadedC, 1, 1, 1);
         discussText     = new BaseText(this, false,22,   5, -10,  enabledC, disabledC, hovCol, depressCol, Color.black, 1, 1, 1);
         developerText   = new BaseText(this, false,16, -210,-95,  enabledC,  enabledC, hovCol, depressCol, Color.black, 1, 1, 1);
         artistText      = new BaseText(this, false,16, -210,-78,  enabledC,  enabledC, hovCol, depressCol, Color.black, 1, 1, 1);
@@ -483,6 +484,8 @@ public class GameUI  extends BasePanel implements MouseListener, MouseMotionList
 		lastVerMiniText.bordered(true);
 		lastVerExeText.bordered(true);
         newVersionText.bordered(true);
+        replayText.preceder(discussText);
+        replayText.bordered(true);
         discussText.bordered(true);
         shrinkText.bordered(true);
         enlargeText.bordered(true);
@@ -736,6 +739,9 @@ public class GameUI  extends BasePanel implements MouseListener, MouseMotionList
         enlargeText.draw(g);
         winSizeText.draw(g);
 
+        replayText.displayText(text("GAME_MENU_OPEN_REPLAY"));
+        replayText.draw(g);
+
         // draw version at bottom right, then go up for other values
         developerText.draw(g);
         artistText.draw(g);
@@ -968,6 +974,7 @@ public class GameUI  extends BasePanel implements MouseListener, MouseMotionList
     }
 
     private void rescaleMenuOptions() {
+        replayText.rescale();
         restartText.rescale();
         continueText.rescale();
         newGameText.rescale();
@@ -1295,7 +1302,9 @@ public class GameUI  extends BasePanel implements MouseListener, MouseMotionList
             hoverBox.mouseReleased();
         mouseDepressed = false;
 
-        if (manualText.contains(x,y))
+        if (replayText.contains(x,y))
+            rotp.ui.history.RecordedGameViewer.open(this);
+        else if (manualText.contains(x,y))
             openManual();
         else if (discussText.contains(x,y))
             openRedditPage();
@@ -1353,6 +1362,8 @@ public class GameUI  extends BasePanel implements MouseListener, MouseMotionList
         BaseText newHover = null;
         if (languageBox.contains(x,y)) 
             languagePanel.setVisible(true);
+        else if (replayText.contains(x,y))
+            newHover = replayText;
         else if (discussText.contains(x,y))
             newHover = discussText;
         else if (canContinue() && continueText.contains(x,y))

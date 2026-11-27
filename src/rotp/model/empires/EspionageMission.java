@@ -15,6 +15,7 @@
  */
 package rotp.model.empires;
 
+import rotp.replay.ReplayRecorder;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -91,6 +92,9 @@ public class EspionageMission implements Base, Serializable {
     public void stealTech(Tech t)   {
         stolenTech = t.id();
         spies.owner().stealTech(stolenTech);
+        if (ReplayRecorder.recording())
+            ReplayRecorder.event("Espionage", spies.owner().id, targetSystem.id,
+                    "Stole " + stolenTech + " from " + spies.empire().name());
     }
     public void frameEmpire(Empire e) {
         if (e == null)

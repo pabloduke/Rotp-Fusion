@@ -15,6 +15,7 @@
  */
 package rotp.model.colony;
 
+import rotp.replay.ReplayRecorder;
 import java.awt.event.MouseEvent;
 
 import javax.swing.SwingUtilities;
@@ -279,7 +280,11 @@ public class ColonyShipyard extends ColonySpendingCategory {
     void removeStargate()  { hasStargate = stargateCompleted = false; }
     public boolean shipLimitReached()         { return shipLimitReached; }
     public Design design()                    { return design; }
-    public void design(Design d)              { design = d; }
+    public void design(Design d)              {
+        if (ReplayRecorder.recording() && design != d && d != null)
+            ReplayRecorder.event("Production", empire().id, colony.starSystem().id, d.name());
+        design = d;
+    }
     public void addQueuedBC(float d)          { queuedBC += d; }
     public int desiredShips()                 { return desiredShips; }
     public void addDesiredShips(int i)        { desiredShips += i; }
@@ -392,7 +397,7 @@ public class ColonyShipyard extends ColonySpendingCategory {
         buildingStargate = design == empire().shipLab().stargateDesign();
     }
     public void switchToDesign(Design d) {
-        design = d;
+        design(d);
         buildingStargate = d instanceof DesignStargate;
     }
 	public void goToDefaultDesign()	{

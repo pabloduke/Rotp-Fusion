@@ -15,6 +15,7 @@
  */
 package rotp.model.tech;
 
+import rotp.replay.ReplayRecorder;
 import static rotp.model.game.IBaseOptsTools.MOD_UI;
 
 import java.io.Serializable;
@@ -106,6 +107,8 @@ public final class TechCategory implements Base, Serializable {
         if (!id().equals(t.cat.id()))
             return false;
         researchStarted = true;
+        if (ReplayRecorder.recording() && !t.id().equals(currentTech))
+            ReplayRecorder.event("Research", tree.empire().id, -1, t.id());
         currentTech = t.id();
         selectionPending = false;
 		selectionTime = galaxy().numberTurns();

@@ -15,6 +15,7 @@
  */
 package rotp.model.empires;
 
+import rotp.replay.ReplayRecorder;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -85,6 +86,8 @@ public class SabotageMission implements Base, Serializable {
 
         float factories = sys.colony().industry().factories();
         factoriesDestroyed = bounds(1, factoriesDestroyed, (int) factories);
+        if (ReplayRecorder.recording())
+            ReplayRecorder.event("Sabotage", spies.owner().id, sys.id, "Factories destroyed: " + factoriesDestroyed);
         if (factoriesDestroyed > 0) {
             spies.report().recordSabotage(missionType, system.id, factoriesDestroyed);
             DiplomaticTreaty treaty = spies.owner().treaty(spies.empire());
@@ -110,6 +113,8 @@ public class SabotageMission implements Base, Serializable {
 
         missileBasesDestroyed = bounds(1, missileBasesDestroyed, sys.colony().defense().activeBases());
 
+        if (ReplayRecorder.recording())
+            ReplayRecorder.event("Sabotage", spies.owner().id, sys.id, "Missile bases destroyed: " + missileBasesDestroyed);
         if (missileBasesDestroyed > 0) {
             spies.report().recordSabotage(missionType, system.id, missileBasesDestroyed);
             sys.colony().defense().destroyBases(missileBasesDestroyed);
@@ -131,6 +136,8 @@ public class SabotageMission implements Base, Serializable {
         float pct = roll(2,10)/100.0f;
         rebelsIncited = col.inciteRebels(pct, "GNN_PLAYER_REBELLION");
 
+        if (ReplayRecorder.recording())
+            ReplayRecorder.event("Sabotage", spies.owner().id, sys.id, "Rebels incited: " + rebelsIncited);
         if (rebelsIncited > 0) {
             spies.report().recordSabotage(missionType, system.id, rebelsIncited);
             SabotageRebellionIncident.addIncident(this);

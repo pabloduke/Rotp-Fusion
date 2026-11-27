@@ -15,6 +15,7 @@
  */
 package rotp.model.empires;
 
+import rotp.replay.ReplayRecorder;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -119,9 +120,14 @@ public final class SpyNetwork implements Base, Serializable {
     public int lastSpyDate()         { return lastSpyDate; }
     public TechTree tech()           { return tech; }
     public List<ShipView> ships()    { return shipViews; }
-    public void beginHide()          {  mission = Mission.HIDE; }
-    public void beginSabotage()      {  mission = Mission.SABOTAGE; }
-    public void beginEspionage()     {  mission = Mission.ESPIONAGE; }
+    private void setMission(Mission next) {
+        if (ReplayRecorder.recording() && mission != next)
+            ReplayRecorder.event("Spy mission", view.ownerId(), -1, next + " against empire #" + view.empId());
+        mission = next;
+    }
+    public void beginHide()          { setMission(Mission.HIDE); }
+    public void beginSabotage()      { setMission(Mission.SABOTAGE); }
+    public void beginEspionage()     { setMission(Mission.ESPIONAGE); }
 
     public boolean isHide()          { return mission == Mission.HIDE; }
     public boolean isSabotage()      { return mission == Mission.SABOTAGE; }

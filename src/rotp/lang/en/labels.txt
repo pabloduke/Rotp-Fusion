@@ -475,6 +475,7 @@ GAME_DISCUSS_ONLINE               | Discuss Online
 GAME_MENU_CONTINUE                | Continue Game
 GAME_MENU_NEW_GAME                | New Game
 GAME_MENU_NEW_GAME_NEW_DICE		| Quick Start
+GAME_MENU_OPEN_REPLAY             | Open Replay
 GAME_MENU_LOAD_GAME               | Load Game
 GAME_MENU_LOAD_OPTIONS            | Load Options
 GAME_MENU_SAVE_GAME               | Save Game

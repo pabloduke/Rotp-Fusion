@@ -1,5 +1,7 @@
 package rotp;
 
+import java.nio.file.Path;
+import rotp.replay.ReplayRecorder;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -16,11 +18,12 @@ final class HeadlessMatch {
         String size = "small";
         String[] ais = {"fusion"};
         int opponents = 1;
+        Path recording = null;
         try {
             for (int i = 1; i < args.length; i++) {
                 String key = args[i];
                 if (key.equals("--help")) {
-                    System.out.println("--headless [--galaxy-size small] [--opponents 1] [--ais fusion]\n"
+                    System.out.println("--headless [--galaxy-size small] [--opponents 1] [--ais fusion] [--record <path>]\n"
                             + "Sizes: " + SIZES + "\nAIs (one or one per empire): " + AIS);
                     return 0;
                 }
@@ -29,6 +32,7 @@ final class HeadlessMatch {
                 switch (key) {
                     case "--galaxy-size" -> size = value;
                     case "--opponents" -> opponents = Integer.parseInt(value);
+                    case "--record" -> recording = Path.of(args[i]);
                     case "--ais" -> ais = value.split(",", -1);
                     default -> throw new IllegalArgumentException("Unknown option " + key);
                 }
@@ -55,16 +59,23 @@ final class HeadlessMatch {
                 return 2;
             }
             var session = start(options, opponents, ais);
-            while (!session.matchOutcome().finished()) {
-                int turn = session.galaxy().currentTurn();
-                try {
-                    session.advanceInProcessTurn();
-                } catch (RuntimeException failure) {
-                    throw new IllegalStateException("Turn " + turn + ", phase "
-                            + session.turnCoordinator().activePhase(), failure);
+            try (var recorder = recording == null ? null : new ReplayRecorder(recording, session)) {
+                if (recorder != null) recorder.capture();
+                while (!session.matchOutcome().finished()) {
+                    int turn = session.galaxy().currentTurn();
+                    try {
+                        session.advanceInProcessTurn();
+                    } catch (RuntimeException failure) {
+                        throw new IllegalStateException("Turn " + turn + ", phase "
+                                + session.turnCoordinator().activePhase(), failure);
+                    }
+                    if (turn == session.galaxy().currentTurn() && !session.matchOutcome().finished())
+                        throw new IllegalStateException("Match stalled at turn " + turn + ": " + session.turnCheckpoint());
+                    if (recorder != null) recorder.capture();
                 }
-                if (turn == session.galaxy().currentTurn() && !session.matchOutcome().finished())
-                    throw new IllegalStateException("Match stalled at turn " + turn + ": " + session.turnCheckpoint());
+                if (recorder != null) recorder.finish();
+            } catch (java.io.IOException failure) {
+                throw new java.io.IOException("Cannot record " + recording + " at turn " + session.galaxy().currentTurn(), failure);
             }
             var outcome = session.matchOutcome();
             System.out.println("Turn " + session.galaxy().currentTurn() + " — " + outcome.cause());

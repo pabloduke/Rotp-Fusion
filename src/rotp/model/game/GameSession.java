@@ -2196,6 +2196,12 @@ public final class GameSession implements Base, Serializable {
         if (hotSeatState != null) return rotp.multiplayer.hotseat.HotSeatPersistence.save(this, saveFile);
         return writeSessionAtomically(saveFile);
     }
+    /** Writes one independent save payload without closing the caller's stream. */
+    public void writeSnapshot(java.io.OutputStream stream) throws IOException {
+        var output = new ObjectOutputStream(stream);
+        output.writeObject(this);
+        output.flush();
+    }
     private long writeSessionAtomically(File saveFile) throws Exception {
         GameSession currSession = GameSession.instance();
 		((MOO1GameOptions)currSession.options()).updateVersion();
@@ -2203,10 +2209,8 @@ public final class GameSession implements Base, Serializable {
         Path temporary = Files.createTempFile(destination.getParent(), "." + saveFile.getName(), ".tmp");
         try {
             byte[] data;
-            try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                    ObjectOutputStream objOut = new ObjectOutputStream(bos)) {
-                objOut.writeObject(currSession);
-                objOut.flush();
+            try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+                currSession.writeSnapshot(bos);
                 data = bos.toByteArray();
             }
             try (ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(temporary))) {
