@@ -1628,7 +1628,8 @@ public final class Empire extends Species implements NamedObject {
 
         // empire settings
         if (isAIControlled()) {
-            scientistAI().setTechTreeAllocations();
+            if (!rotp.leader.LeaderOrders.applyAllocation(this))
+                scientistAI().setTechTreeAllocations();
             securityAllocation = spyMasterAI().suggestedInternalSecurityLevel();
             empireTaxLevel = governorAI().suggestedEmpireTaxLevel(); // BR: direct access to not trigger player related updates
             //ail: calling this before fleetCommanderAI avoids a possible case where a fleet is slower than it could be due to scraping ships after the fleet was launched

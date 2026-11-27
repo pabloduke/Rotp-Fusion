@@ -292,7 +292,7 @@ public final class EmpireView implements Base, Serializable {
     }
     void makeDiplomaticOffers() {
         log(this+": makeDiplomaticOffers");
-        if (owner.isAIControlled())
+        if (owner.isAIControlled() && !rotp.leader.LeaderDiplomacy.controls(owner))
             owner.diplomatAI().makeDiplomaticOffers(this);
     }
     public String decode(String s) {
