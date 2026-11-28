@@ -79,6 +79,12 @@ Set the top-level match field `"scheduler": "event"` to try persistent objective
 
 Each completed leader match writes a sibling `.metrics.json` with per-seat and combined attempts, retries, failures, provider-reported input and output tokens, and time spent on requests. Missing usage counts indicate partial coverage. Simulation and video export times are separate. To compare schedulers, run the same match file once with `"legacy"` and once with `"event"`, using distinct recording names. The draft seed controls race selection priority. Independently generated galaxies and model decisions can produce different game lengths, so compare per-turn costs alongside totals.
 
+A completed `--match` run also writes two UTF-8 text files beside the recording. For `duel.rotpreplay`, open `duel-diplomacy.txt` for diplomatic messages and `duel-journal.txt` for turn-by-turn in-character summaries, orders, outcomes, and engine fallbacks. Regenerate both files offline from a compatible archive with:
+
+```sh
+java -jar target/rotp-Fusion-2026-11-27.jar --export-replay-logs replays/duel.rotpreplay
+```
+
 The desktop replay journal includes the draft, strategy summaries, orders and diplomatic exchanges. Opening the replay or exporting its video again works offline.
 
 ### Record and replay a match

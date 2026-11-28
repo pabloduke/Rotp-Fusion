@@ -122,8 +122,10 @@ final class HeadlessMatch {
         try {
             System.out.println("Video: " + rotp.replay.ReplayVideo.export(recording));
         } finally {
-            if (leaders != null)
+            if (leaders != null) {
                 System.out.println("Metrics: " + leaders.writeMetrics(recording, videoStart, session.galaxy().currentTurn()));
+                System.out.println(rotp.replay.ReplayLogs.export(recording));
+            }
         }
         var outcome = session.matchOutcome();
         System.out.println("Turn " + session.galaxy().currentTurn() + " — " + outcome.cause());

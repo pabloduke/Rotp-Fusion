@@ -11,14 +11,18 @@ public class Launcher {
     }
 
     static boolean dispatch(String[] args) {
-        if (args.length > 0 && args[0].equals("--export-replay")) {
+        if (args.length > 0 && (args[0].equals("--export-replay") || args[0].equals("--export-replay-logs"))) {
             enableHeadless();
             if (args.length != 2) {
-                System.err.println("Usage: --export-replay <recording>");
+                System.err.println("Usage: " + args[0] + " <recording>");
                 System.exit(2);
             }
             try {
-                System.out.println("Video: " + rotp.replay.ReplayVideo.export(java.nio.file.Path.of(args[1])));
+                var recording = java.nio.file.Path.of(args[1]);
+                if (args[0].equals("--export-replay-logs"))
+                    System.out.println(rotp.replay.ReplayLogs.export(recording));
+                else
+                    System.out.println("Video: " + rotp.replay.ReplayVideo.export(recording));
             } catch (Exception failure) {
                 System.err.println("Cannot export " + args[1] + ": " + failure.getMessage());
                 System.exit(1);
