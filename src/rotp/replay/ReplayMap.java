@@ -95,6 +95,11 @@ public final class ReplayMap {
     }
 
     public void draw(Graphics2D g, int w, int h, ReplayFrame frame, boolean territory, ReplayFrame.Item selected) {
+        draw(g, w, h, frame, territory, selected, Integer.MAX_VALUE);
+    }
+
+    public void draw(Graphics2D g, int w, int h, ReplayFrame frame, boolean territory, ReplayFrame.Item selected,
+                     int frameIndex) {
         g.setColor(SPACE);
         g.fillRect(0,0,w,h);
         var transform = projection(w,h,territory);
@@ -115,7 +120,7 @@ public final class ReplayMap {
             }
             drawLegend(g, w, h, frame.turn(), counts);
         }
-        var cues = territory ? conflicts.at(frame.turn()) : java.util.Map.<Integer, ReplayConflicts.Cue>of();
+        var cues = territory ? conflicts.at(frame.turn(), frameIndex) : java.util.Map.<Integer, ReplayConflicts.Cue>of();
         int system = 0;
         for (var item : frame.items()) {
             if (item.kind().equals("Empire") || (territory && item.kind().equals("Fleet"))) continue;

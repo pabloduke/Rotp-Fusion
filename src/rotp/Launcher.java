@@ -11,6 +11,11 @@ public class Launcher {
     }
 
     static boolean dispatch(String[] args) {
+        if (args.length > 0 && args[0].equals("--serve-replays")) {
+            enableHeadless();
+            System.exit(rotp.replay.ReplayServer.run(args));
+            return true;
+        }
         if (args.length > 0 && (args[0].equals("--export-replay") || args[0].equals("--export-replay-logs"))) {
             enableHeadless();
             if (args.length != 2) {

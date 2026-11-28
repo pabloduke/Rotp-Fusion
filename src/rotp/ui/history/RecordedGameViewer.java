@@ -185,7 +185,7 @@ public final class RecordedGameViewer extends JDialog {
         @Override protected void paintComponent(Graphics graphics) {
             super.paintComponent(graphics);
             if (frame != null)
-                renderer.draw((Graphics2D)graphics,getWidth(),getHeight(),frame,territory.isSelected(),objects.getSelectedValue());
+                renderer.draw((Graphics2D)graphics,getWidth(),getHeight(),frame,territory.isSelected(),objects.getSelectedValue(),index);
         }
     }
 }
