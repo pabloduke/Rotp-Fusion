@@ -101,7 +101,7 @@ async function display(index, offset) {
         const first = replay.turns.indexOf(turn), end = replay.turns.lastIndexOf(turn);
         $('position').textContent = 'Turn ' + turn + (first === end ? '' : ' · Frame ' + (frame-first+1) + ' of ' + (end-first+1));
         $('scrub').value = frame;
-        $('jump').value = turn;
+        if (document.activeElement !== $('jump')) $('jump').value = turn;
         $('prev').disabled = frame === 0;
         $('next').disabled = frame === last;
         $('outcome').hidden = !outcome?.condition;
@@ -144,6 +144,10 @@ async function openReplay() {
         $('scrub').max = replay.turns.length - 1;
         $('jump').max = replay.turns[replay.turns.length - 1];
         $('scrub').oninput = () => seek(Number($('scrub').value));
+        $('jump').onfocus = pause;
+        $('jump').onkeydown = event => {
+            if (event.key === 'Enter') event.currentTarget.blur();
+        };
         $('jump').onchange = () => {
             const index = replay.turns.findIndex(t => t >= Number($('jump').value));
             seek(index < 0 ? replay.turns.length - 1 : index);
