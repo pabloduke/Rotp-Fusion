@@ -21,6 +21,7 @@ public final class RecordedGameViewer extends JDialog {
     private final Timer timer = new Timer(1000, e -> load(this.index + 1));
     private final JList<ReplayFrame.Item> objects = new JList<>();
     private final JList<ReplayFrame.Event> events = new JList<>();
+    private final JTextPane rosterPane = new JTextPane();
     private final JTextArea details = new JTextArea(5, 36);
     private final GalaxyMap map = new GalaxyMap();
     private final JCheckBox territory = new JCheckBox("Territory");
@@ -47,6 +48,8 @@ public final class RecordedGameViewer extends JDialog {
         var tabs = new JTabbedPane();
         tabs.addTab("Galaxy objects", new JScrollPane(objects));
         tabs.addTab("Turn journal", new JScrollPane(events));
+        rosterPane.setEditable(false);
+        tabs.addTab("Empire roster", new JScrollPane(rosterPane));
         details.setEditable(false);
         details.setLineWrap(true);
         details.setWrapStyleWord(true);
@@ -78,7 +81,8 @@ public final class RecordedGameViewer extends JDialog {
         });
         tabs.addChangeListener(e -> {
             if (tabs.getSelectedIndex() == 0) inspectObject();
-            else inspectEvent();
+            else if (tabs.getSelectedIndex() == 1) inspectEvent();
+            else details.setText("");
         });
         territory.addActionListener(e -> map.repaint());
         previous.addActionListener(e -> step(-1));
@@ -110,9 +114,43 @@ public final class RecordedGameViewer extends JDialog {
                 int size = archive.size();
                 var initial = archive.frame(0);
                 var layout = rotp.replay.ReplayMap.from(archive);
-                SwingUtilities.invokeLater(() -> { renderer = layout; count = size; display(0, initial); });
+                var roster = archive.roster();
+                SwingUtilities.invokeLater(() -> {
+                    showRoster(initial, roster);
+                    renderer = layout;
+                    count = size;
+                    display(0, initial);
+                });
             } catch (Exception failure) { failed(failure); }
         });
+    }
+
+    private void showRoster(ReplayFrame initial, java.util.List<rotp.replay.ReplayRoster.Seat> roster) {
+        var document = rosterPane.getStyledDocument();
+        for (var item : initial.items()) {
+            if (!item.kind().equals("Empire")) continue;
+            var seat = roster.stream().filter(s -> s.empireId() == item.empire()).findFirst().orElse(null);
+            var color = new javax.swing.text.SimpleAttributeSet();
+            javax.swing.text.StyleConstants.setForeground(color, new Color(item.color()));
+            var title = new javax.swing.text.SimpleAttributeSet();
+            javax.swing.text.StyleConstants.setBold(title, true);
+            String identity;
+            if (seat == null) identity = "Not recorded";
+            else if (seat.builtinAi() != null) identity = seat.race() + " · " + seat.controllerLabel();
+            else {
+                identity = seat.race() + " · " + seat.playerName() + "\nPersona: " + seat.persona()
+                        + "\nModel: " + seat.model() + "\nProvider: " + seat.provider();
+                if (seat.reasoningEffort() != null) identity += " · Reasoning: " + seat.reasoningEffort();
+            }
+            try {
+                document.insertString(document.getLength(), "■ ", color);
+                document.insertString(document.getLength(), item.name() + "\n", title);
+                document.insertString(document.getLength(), identity + "\n\n", null);
+            } catch (javax.swing.text.BadLocationException impossible) {
+                throw new IllegalStateException(impossible);
+            }
+        }
+        rosterPane.setCaretPosition(0);
     }
 
     private void inspectEvent() {

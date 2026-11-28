@@ -19,20 +19,44 @@ public final class ReplayMap {
     private final ReplayConflicts conflicts;
     private static final Font LEGEND_FONT = new Font(Font.SANS_SERIF, Font.PLAIN, 22);
     private static final FontRenderContext METRICS = new FontRenderContext(null, true, true);
-    private final int legendWidth;
+    private static final Font IDENTITY_FONT = LEGEND_FONT.deriveFont(17f);
+    private final java.util.Map<Integer,List<java.awt.font.TextLayout>> identityLines = new HashMap<>();
+    private final List<ReplayRoster.Seat> roster;
+    private final int legendWidth, legendHeight;
 
     public static ReplayMap from(ReplayArchive archive) throws IOException {
-        return new ReplayMap(archive.frame(0), ReplayConflicts.read(archive));
+        return new ReplayMap(archive.frame(0), ReplayConflicts.read(archive), archive.roster());
     }
 
     ReplayMap(ReplayFrame initial, ReplayConflicts conflicts) {
+        this(initial, conflicts, List.of());
+    }
+
+    private ReplayMap(ReplayFrame initial, ReplayConflicts conflicts, List<ReplayRoster.Seat> roster) {
+        this.roster = roster;
         this.conflicts = conflicts;
         var stars = initial.items().stream().filter(i -> i.kind().equals("System")).toList();
         empires = initial.items().stream().filter(i -> i.kind().equals("Empire")).toList();
         int systemCount = stars.size();
         double nameWidth = empires.stream().mapToDouble(e -> LEGEND_FONT.getStringBounds(e.name(), METRICS).getWidth()).max().orElse(0);
         double countWidth = LEGEND_FONT.getStringBounds(Integer.toString(systemCount), METRICS).getWidth();
-        legendWidth = (int)Math.ceil(Math.max(200, nameWidth + countWidth + 64));
+        var labels = new HashMap<Integer,String>();
+        for (var seat : roster) labels.put(seat.empireId(), seat.controllerLabel());
+        double labelWidth = labels.values().stream()
+                .mapToDouble(label -> IDENTITY_FONT.getStringBounds(label, METRICS).getWidth()).max().orElse(120);
+        legendWidth = (int)Math.ceil(Math.max(Math.max(200, nameWidth + countWidth + 64), Math.min(440, labelWidth + 50)));
+        int rowsHeight = 0;
+        for (var empire : empires) {
+            String label = labels.getOrDefault(empire.empire(), "Not recorded");
+            var text = new java.text.AttributedString(label);
+            text.addAttribute(java.awt.font.TextAttribute.FONT, IDENTITY_FONT);
+            var wrapper = new java.awt.font.LineBreakMeasurer(text.getIterator(), METRICS);
+            var lines = new ArrayList<java.awt.font.TextLayout>();
+            while (wrapper.getPosition() < label.length()) lines.add(wrapper.nextLayout(legendWidth - 46));
+            identityLines.put(empire.empire(), List.copyOf(lines));
+            rowsHeight += 30 + 20 * lines.size();
+        }
+        legendHeight = 80 + rowsHeight;
         width = 2 + stars.stream().mapToDouble(ReplayFrame.Item::x).max().orElse(1);
         height = 2 + stars.stream().mapToDouble(ReplayFrame.Item::y).max().orElse(1);
         for (var star : stars) {
@@ -75,7 +99,7 @@ public final class ReplayMap {
     }
 
     private float legendScale(int w, int h) {
-        return Math.min(1f, Math.min(w * .45f / legendWidth, h / (float)(80 + 30 * empires.size())));
+        return Math.min(1f, Math.min(w * .45f / legendWidth, h / (float)legendHeight));
     }
 
     private int legendWidth(int w, int h) {
@@ -134,7 +158,13 @@ public final class ReplayMap {
         }
         var result = frame.result();
         if (territory && result != null)
-            drawResult(g, w - legendWidth(w,h), h, result);
+            drawResult(g, w - legendWidth(w,h), h, attributedResult(result));
+    }
+
+    ReplayFrame.Result attributedResult(ReplayFrame.Result result) {
+        var winners = roster.stream().filter(ReplayRoster.Seat::winner)
+                .map(s -> s.empireName() + " (" + s.controllerLabel() + ")").toList();
+        return winners.isEmpty() ? result : new ReplayFrame.Result(result.condition(), String.join(", ", winners));
     }
 
     /** Final-frame banner, confined to the map so the colony standings remain visible. */
@@ -195,6 +225,11 @@ public final class ReplayMap {
                 panel.drawString(empire.name(),34,y);
                 String count = Integer.toString(counts.getOrDefault(empire.empire(),0));
                 panel.drawString(count,right-panel.getFontMetrics().stringWidth(count),y);
+                panel.setColor(new Color(204, 212, 227));
+                for (var line : identityLines.get(empire.empire())) {
+                    y += 20;
+                    line.draw(panel, 34, y);
+                }
                 y += 30;
             }
         } finally { panel.dispose(); }

@@ -79,7 +79,7 @@ Set the top-level match field `"scheduler": "event"` to try persistent objective
 
 Each completed leader match writes a sibling `.metrics.json` with per-seat and combined attempts, retries, failures, provider-reported input and output tokens, and time spent on requests. Missing usage counts indicate partial coverage. Simulation and video export times are separate. To compare schedulers, run the same match file once with `"legacy"` and once with `"event"`, using distinct recording names. The draft seed controls race selection priority. Independently generated galaxies and model decisions can produce different game lengths, so compare per-turn costs alongside totals.
 
-The desktop replay journal includes the draft, strategy summaries, orders and diplomatic exchanges. Opening the replay or exporting its video again works offline.
+The desktop replay journal includes the draft, strategy summaries, orders and diplomatic exchanges. The **Empire roster** tab shows the race, player, persona, and model or built-in AI for every empire throughout playback. The MP4 territory legend labels each controller and identifies the winners on the final frame. Older compatible recordings display “Not recorded” for missing controller metadata. Opening the replay or exporting its video again works offline.
 
 ### Record and replay a match
 

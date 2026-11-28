@@ -1,6 +1,9 @@
 package rotp.replay;
 
 import java.io.*;
+import com.google.gson.Gson;
+import java.nio.charset.StandardCharsets;
+import rotp.leader.MatchConfig;
 import java.nio.file.*;
 import java.util.*;
 import java.util.zip.*;
@@ -17,9 +20,17 @@ public final class ReplayRecorder implements Closeable {
     private final List<Integer> turns = new ArrayList<>();
     private final List<ReplayFrame.Event> journal = new ArrayList<>();
     private final GameSession session;
+    private final MatchConfig match;
+    private final String[] ais;
     private boolean complete;
 
     public ReplayRecorder(Path path, GameSession game) throws IOException {
+        this(path, game, null, null);
+    }
+
+    public ReplayRecorder(Path path, GameSession game, MatchConfig match, String[] ais) throws IOException {
+        this.match = match;
+        this.ais = ais == null ? null : ais.clone();
         target = path.toAbsolutePath();
         if (Files.isDirectory(target)) throw new IOException("Recording path is a directory: " + target);
         session = game;
@@ -65,6 +76,9 @@ public final class ReplayRecorder implements Closeable {
     }
 
     public void finish() throws IOException {
+        zip.putNextEntry(new ZipEntry("roster.json"));
+        zip.write(new Gson().toJson(ReplayRoster.capture(session, match, ais)).getBytes(StandardCharsets.UTF_8));
+        zip.closeEntry();
         zip.putNextEntry(new ZipEntry("index"));
         var out = new DataOutputStream(zip);
         out.writeUTF("ROTP Replay 1");
