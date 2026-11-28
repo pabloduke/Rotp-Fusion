@@ -87,7 +87,7 @@ final class HeadlessMatch {
             try (leaders) {
                 if (leaders != null) leaders.draft(options);
                 var session = start(options, opponents, ais);
-                play(session, recording, leaders);
+                play(session, recording, leaders, match, ais);
             }
             return 0;
         } catch (Throwable failure) {
@@ -96,8 +96,8 @@ final class HeadlessMatch {
         }
     }
 
-    private static void play(GameSession session, Path recording, LeaderMatch leaders) throws Exception {
-        try (var recorder = new ReplayRecorder(recording, session)) {
+    private static void play(GameSession session, Path recording, LeaderMatch leaders, MatchConfig match, String[] ais) throws Exception {
+        try (var recorder = new ReplayRecorder(recording, session, match, ais)) {
             if (leaders != null) leaders.decide(session.galaxy());
             recorder.capture();
             while (!session.matchOutcome().finished()) {

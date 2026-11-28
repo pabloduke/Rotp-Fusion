@@ -58,16 +58,18 @@ public final class ReplayLogs {
         }
     }
 
-    private static Map<Integer, String> participants(ReplayFrame firstFrame) {
+    private static Map<Integer, String> participants(ReplayFrame firstFrame, ReplayArchive archive) {
         var names = new HashMap<Integer, String>();
         for (var item : firstFrame.items())
             if (item.kind().equals("Empire")) names.put(item.empire(), item.name() + " (#" + item.empire() + ")");
+        for (var seat : archive.roster())
+            names.put(seat.empireId(), seat.empireName() + " (#" + seat.empireId() + ") – " + seat.controllerLabel());
         return names;
     }
 
     private static void write(ReplayArchive archive, BufferedWriter mail, BufferedWriter journal) throws IOException {
         var frame = archive.frame(0);
-        var names = participants(frame);
+        var names = participants(frame, archive);
         boolean hasDiplomacy = false, hasJournal = false;
         mail.write("Diplomatic transcript\n");
         journal.write("Strategic journal\n");

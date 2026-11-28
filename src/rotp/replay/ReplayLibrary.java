@@ -21,7 +21,7 @@ final class ReplayLibrary implements Closeable {
     private final Map<String, Entry> catalog = new LinkedHashMap<>();
     private final Map<String, Opened> opened = new LinkedHashMap<>(4, .75f, true);
 
-    record Empire(int id, String name, String color) {}
+    record Empire(int id, String name, String color, String persona, String model, String builtinAi) {}
     record Summary(String id, String name, int turns, int frames, List<Empire> empires, String error) {}
     record Metadata(String id, String name, int[] turns, List<Empire> empires, List<String> downloads) {}
     record Event(int frame, int turn, String phase, String kind, int empire, int system,
@@ -41,7 +41,7 @@ final class ReplayLibrary implements Closeable {
 
         private static String categoryOf(String kind) {
             return switch (kind) {
-                case "Diplomatic mail", "Diplomacy", "Reply" -> "diplomacy";
+                case "Diplomatic mail", "Diplomacy", "Reply", "Treaty" -> "diplomacy";
                 case "Battle", "Invasion", "Bombardment" -> "battles";
                 case "Race draft" -> "journal";
                 default -> kind.startsWith("Leader ") ? "journal" : "other";
@@ -96,8 +96,15 @@ final class ReplayLibrary implements Closeable {
         name = name.substring(0, name.length()-EXTENSION.length());
         Summary summary;
         try (var archive = new ReplayArchive(file)) {
+            var roster = new HashMap<Integer, ReplayRoster.Seat>();
+            for (var seat : archive.roster()) roster.put(seat.empireId(), seat);
             var empires = archive.frame(0).items().stream().filter(i -> i.kind().equals("Empire"))
-                    .map(i -> new Empire(i.empire(), i.name(), String.format("#%06x", i.color() & 0xffffff))).toList();
+                    .map(i -> {
+                        var seat = roster.get(i.empire());
+                        return new Empire(i.empire(), i.name(), String.format("#%06x", i.color() & 0xffffff),
+                                seat == null ? null : seat.persona(), seat == null ? null : seat.model(),
+                                seat == null ? null : seat.builtinAi());
+                    }).toList();
             summary = new Summary(id, name, archive.turn(archive.size()-1), archive.size(), empires, null);
         } catch (IOException | RuntimeException failure) {
             summary = new Summary(id, name, 0, 0, List.of(), archiveError(failure));
@@ -201,7 +208,7 @@ final class ReplayLibrary implements Closeable {
                     for (var event : current.events()) events.add(new Event(i,event));
                 }
                 result = current.result();
-                map = new ReplayMap(initial, conflicts);
+                map = new ReplayMap(initial, conflicts, archive.roster());
             } catch (IOException | RuntimeException failure) {
                 archive.close();
                 throw new IOException(archiveError(failure), failure);
