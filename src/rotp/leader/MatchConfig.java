@@ -13,7 +13,19 @@ import java.util.Objects;
 import java.util.Set;
 
 /** Paths in a match file are relative to that file. Credentials stay outside the match and replay. */
-public record MatchConfig(String galaxySize, long draftSeed, Map<String, Endpoint> endpoints, List<Seat> seats) {
+public record MatchConfig(String galaxySize, long draftSeed, Map<String, Endpoint> endpoints, List<Seat> seats, String scheduler) {
+    public MatchConfig {
+        scheduler = Objects.requireNonNullElse(scheduler, "legacy");
+        if (!Set.of("legacy", "event").contains(scheduler))
+            throw new IllegalArgumentException("Expected scheduler legacy or event");
+    }
+
+    public MatchConfig(String galaxySize, long draftSeed, Map<String, Endpoint> endpoints, List<Seat> seats) {
+        this(galaxySize, draftSeed, endpoints, seats, "legacy");
+    }
+
+    boolean eventDriven() { return scheduler.equals("event"); }
+
     public record Endpoint(String baseUrl, String apiKeyEnv, boolean structuredOutput) {
         public Endpoint(String baseUrl, String apiKeyEnv) { this(baseUrl, apiKeyEnv, false); }
 

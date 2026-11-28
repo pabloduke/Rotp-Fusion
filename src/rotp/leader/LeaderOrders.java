@@ -1,8 +1,6 @@
 package rotp.leader;
 
-import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.Map;
+import java.util.*;
 import rotp.model.empires.Empire;
 import rotp.model.galaxy.ShipFleet;
 
@@ -11,6 +9,81 @@ public final class LeaderOrders implements AutoCloseable {
     private static final ThreadLocal<LeaderOrders> active = new ThreadLocal<>();
     private final Map<Empire, int[]> budgets = new HashMap<>();
     private final Map<ShipFleet, Integer> destinations = new IdentityHashMap<>();
+
+    private static final class Goal {
+        final String id;
+        final ShipFleet fleet;
+        final int target;
+        boolean threatened;
+        Goal(String id, ShipFleet fleet, int target) {
+            this.id = id;
+            this.fleet = fleet;
+            this.target = target;
+        }
+    }
+
+    private final Map<Empire, Map<String, Goal>> goals = new HashMap<>();
+
+    Set<String> objectives(Empire empire) {
+        return Set.copyOf(goals.getOrDefault(empire, Map.of()).keySet());
+    }
+
+    private int nextGoal = 1;
+
+    void track(Empire empire, String id, ShipFleet fleet, int target) {
+        var activeGoals = goals.computeIfAbsent(empire, key -> new TreeMap<>());
+        if (fleet != null) {
+            activeGoals.values().removeIf(goal -> goal.fleet == fleet);
+            id += "/" + nextGoal++;
+        } else if (id.startsWith("research/")) {
+            activeGoals.values().removeIf(goal -> goal.id.startsWith("research/") && goal.target == target);
+        }
+        activeGoals.put(id, new Goal(id, fleet, target));
+    }
+
+    void cancel(Empire empire, String id) {
+        var goal = goals.get(empire).remove(id);
+        if (goal.fleet != null) destinations.remove(goal.fleet);
+        if (id.equals("allocation")) budgets.remove(empire);
+    }
+
+    List<String> evaluate(Empire empire) {
+        var events = new ArrayList<String>();
+        var it = goals.getOrDefault(empire, Map.of()).values().iterator();
+        while (it.hasNext()) {
+            Goal goal = it.next();
+            String id = goal.id;
+            boolean done, blocked;
+            if (id.equals("allocation")) {
+                done = !budgets.containsKey(empire);
+                blocked = false;
+            } else if (id.startsWith("research/")) {
+                String tech = id.substring("research/".length());
+                done = empire.tech().category(goal.target).knownTechs().contains(tech);
+                blocked = !tech.equals(empire.tech().category(goal.target).currentTech());
+            } else {
+                int system = goal.target;
+                int owner = empire.sv.empId(system);
+                boolean scouted = empire.sv.isScouted(system);
+                done = id.startsWith("scout/") ? scouted : owner == empire.id;
+                blocked = !onMission(goal.fleet, system)
+                        || (id.startsWith("colonize/") && (owner >= 0 || empire.sv.isGuarded(system)))
+                        || (id.startsWith("attack/") && (owner < 0 || !empire.atWarWith(owner)));
+                if (!done && !blocked) {
+                    boolean threat = empire.enemyFleets().stream().anyMatch(f -> empire.atWarWith(f.empId())
+                            && (f.isOrbiting() ? f.sysId() == system : empire.knowShipETA() && f.destSysId() == system));
+                    if (threat && !goal.threatened) events.add("Threat to " + id);
+                    goal.threatened = threat;
+                }
+            }
+            if (done || blocked) {
+                events.add((done ? "Completed " : "Blocked ") + id);
+                if (goal.fleet != null) destinations.remove(goal.fleet);
+                it.remove();
+            }
+        }
+        return events;
+    }
 
     LeaderOrders() { active.set(this); }
 

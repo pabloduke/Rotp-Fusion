@@ -11,13 +11,34 @@ import rotp.ui.diplomacy.DiplomaticReply;
 public final class LeaderDiplomacy implements AutoCloseable {
     private static final ThreadLocal<LeaderDiplomacy> active = new ThreadLocal<>();
     private final Set<Integer> leaders;
+    private final boolean eventDriven;
     private final Map<Integer, Offer> outstanding = new LinkedHashMap<>();
     private final List<Letter> queued = new ArrayList<>();
     private final Map<Integer, List<String>> history = new HashMap<>();
+    private final Set<Integer> urgent = new HashSet<>();
+    private final Map<Integer, List<Letter>> unread = new HashMap<>();
+    private final Map<Integer, Map<Integer, List<String>>> archive = new HashMap<>();
+    boolean urgent(int id) { return urgent.contains(id); }
+    List<String> unread(int id) {
+        return unread.getOrDefault(id, List.of()).stream().map(Letter::receivedText).toList();
+    }
+    void addInboxTopics(int id, Set<String> topics) {
+        for (var letter : unread.getOrDefault(id, List.of())) topics.add("mail/" + letter.from);
+    }
+    void acknowledge(int id) { unread.remove(id); }
+    Map<String, List<String>> correspondence(int id) {
+        var result = new TreeMap<String, List<String>>();
+        archive.getOrDefault(id, Map.of()).forEach((other, letters) ->
+                result.put("mail/" + other, List.copyOf(letters)));
+        return result;
+    }
+
     private int nextId = 1;
 
     private record Offer(int id, int from, int to, String terms) {}
-    private record Letter(int from, int to, String text, Offer offer) {}
+    private record Letter(int from, int to, String text, Offer offer) {
+        String receivedText() { return "From #" + from + ": " + text; }
+    }
     record Action(String choice, String text) {}
     record Choice(int other, String terms, int offer) {}
     record Menu(Map<String, Choice> choices, List<String> recentMail, List<String> openOffers) {
@@ -40,7 +61,11 @@ public final class LeaderDiplomacy implements AutoCloseable {
         }
     }
 
-    LeaderDiplomacy(Set<Integer> leaders) { this.leaders = Set.copyOf(leaders); active.set(this); }
+    LeaderDiplomacy(Set<Integer> leaders, boolean eventDriven) {
+        this.leaders = Set.copyOf(leaders);
+        this.eventDriven = eventDriven;
+        active.set(this);
+    }
     public static boolean controls(Empire empire) {
         var mail = active.get();
         return mail != null && mail.leaders.contains(empire.id);
@@ -60,12 +85,14 @@ public final class LeaderDiplomacy implements AutoCloseable {
     }
 
     private void send(int from, int to, String text, Offer offer) {
-        if (leaders.contains(from)) remember(from, "To #" + to + ": " + text);
+        if (leaders.contains(from)) remember(from, to, "To #" + to + ": " + text);
         queued.add(new Letter(from, to, text, offer));
         ReplayRecorder.event("Diplomatic mail", from, -1, "To #" + to + ": " + text);
     }
 
-    private void remember(int id, String text) {
+    private void remember(int id, int other, String text) {
+        if (eventDriven) archive.computeIfAbsent(id, seat -> new TreeMap<>()).computeIfAbsent(other, key -> new ArrayList<>())
+                .add("T" + Galaxy.current().currentTurn() + " " + text);
         var messages = history.computeIfAbsent(id, seat -> new ArrayList<>());
         messages.add(text);
         if (messages.size() > 24) messages.remove(0);
@@ -80,12 +107,16 @@ public final class LeaderDiplomacy implements AutoCloseable {
     }
 
     Set<Integer> deliver(Galaxy galaxy) {
+        urgent.clear();
         var incoming = List.copyOf(queued);
         queued.clear();
         var recipients = new HashSet<Integer>();
         for (var letter : incoming) {
             if (leaders.contains(letter.to)) {
-                remember(letter.to, "From #" + letter.from + ": " + letter.text);
+                String message = letter.receivedText();
+                remember(letter.to, letter.from, message);
+                if (eventDriven) unread.computeIfAbsent(letter.to, key -> new ArrayList<>()).add(letter);
+                if (letter.offer != null) urgent.add(letter.to);
                 recipients.add(letter.to);
             } else if (letter.offer != null) {
                 var offer = letter.offer;

@@ -115,6 +115,115 @@ public class ScriptedLeaders {
         }
     }
 
+    public static void eventDriven(Path dir, Supplier<GameSession> start) throws Exception {
+        var config = new MatchConfig("small", 7, Map.of(), List.of(seat("a"), seat("b"), seat("c")), "event");
+        var calls = new HashMap<String, List<Integer>>();
+        LeaderClient client = (seat, persona, kind, prompt) -> {
+            var view = JsonParser.parseString(prompt.lines().findFirst().orElseThrow()).getAsJsonObject();
+            int turn = view.get("turn").getAsInt();
+            calls.computeIfAbsent(seat.name(), name -> new ArrayList<>()).add(turn);
+            assertFalse(view.has("surveyedSystems"));
+            if (seat.name().equals("c")) assertFalse(prompt.contains("Private promise"));
+            var response = new JsonObject();
+            if (seat.name().equals("b") && turn == 4 && kind == LeaderClient.Request.REVIEW) {
+                response.add("detailSections", JsonParser.parseString("[\"systems\",\"mail/0\"]"));
+                return response;
+            }
+            if (kind == LeaderClient.Request.FOLLOWUP) {
+                assertEquals(4, turn);
+                assertTrue(prompt.contains("Requested detail:"));
+                assertTrue(view.getAsJsonArray("privateMail").toString().contains("Private promise"));
+            }
+            response.addProperty("summary", "Hold our research course.");
+            response.add("orders", new JsonArray());
+            if (turn == 1) response.add("allocation", JsonParser.parseString("[10,10,10,10,10,10]"));
+            if (seat.name().equals("a") && turn < 4) {
+                var mail = new JsonArray();
+                mail.add(action("message/to/1", "Private promise " + turn));
+                response.add("diplomacy", mail);
+                response.addProperty("reviewAfter", 1);
+            }
+            if (turn == 4 && seat.name().equals("b")) {
+                assertTrue(view.getAsJsonArray("activeObjectives").toString().contains("allocation"));
+                response.add("cancel", JsonParser.parseString("[\"allocation\"]"));
+            }
+            return response;
+        };
+        var path = dir.resolve("event.rotpreplay");
+        try (var match = new LeaderMatch(config, dir.resolve("match.json"), client)) {
+            var session = start.get();
+            var galaxy = session.galaxy();
+            var a = galaxy.empire(0);
+            var b = galaxy.empire(1);
+            a.viewForEmpire(b).embassy().contact(true);
+            b.viewForEmpire(a).embassy().contact(true);
+            try (var recorder = new ReplayRecorder(path, session)) {
+                for (int i = 1; i <= 5; i++) {
+                    match.decide(galaxy);
+                    recorder.capture();
+                    if (i < 5) session.advanceInProcessTurn();
+                }
+                recorder.finish();
+            }
+            assertEquals(List.of(1, 4, 4, 5), calls.get("b"));
+            assertEquals(List.of(1), calls.get("c"));
+            var report = JsonParser.parseString(java.nio.file.Files.readString(
+                    match.writeMetrics(path, System.nanoTime(), 5))).getAsJsonObject();
+            var total = report.getAsJsonObject("total");
+            assertEquals(total.get("attempts"), total.get("missingInput"));
+            assertTrue(total.get("inputTokens").isJsonNull());
+            assertEquals(1, total.getAsJsonObject("byPurpose").get("FOLLOWUP").getAsInt());
+        }
+        try (var replay = new ReplayArchive(path)) {
+            assertTrue(replay.frame(3).events().stream().anyMatch(e -> e.details().contains("Released allocation")));
+        }
+    }
+
+    public static void objectiveLifecycle(Path dir, Supplier<GameSession> start) throws Exception {
+        var stock = new MatchConfig.Seat("fusion", null, null, null, null, null, null);
+        var config = new MatchConfig("small", 7, Map.of(), List.of(seat("a"), stock, stock), "event");
+        var calls = new ArrayList<Integer>();
+        String[] project = new String[1];
+        LeaderClient client = (seat, persona, kind, prompt) -> {
+            var view = JsonParser.parseString(prompt.lines().findFirst().orElseThrow()).getAsJsonObject();
+            int turn = view.get("turn").getAsInt();
+            calls.add(turn);
+            if (turn == 3) throw new java.io.IOException("fixture unavailable");
+            var response = new JsonObject();
+            response.addProperty("summary", "Pursue scientific advantage.");
+            var orders = new JsonArray();
+            if (turn == 1) {
+                for (var f : view.getAsJsonArray("research")) {
+                    var choices = f.getAsJsonObject().getAsJsonArray("choices");
+                    if (choices.size() > 0) {
+                        project[0] = choices.get(0).getAsString();
+                        orders.add(project[0]);
+                        break;
+                    }
+                }
+                assertNotNull(project[0]);
+                response.addProperty("reviewAfter", 2);
+            } else if (turn == 4) {
+                assertTrue(view.get("triggers").toString().contains("unresolved"));
+                assertTrue(view.get("activeObjectives").toString().contains(project[0]));
+            } else if (turn == 7) {
+                assertTrue(view.get("triggers").toString().contains("Completed " + project[0]));
+                assertFalse(view.get("activeObjectives").toString().contains(project[0]));
+            }
+            response.add("orders", orders);
+            return response;
+        };
+        try (var match = new LeaderMatch(config, dir.resolve("match.json"), client)) {
+            var galaxy = start.get().galaxy();
+            for (int i = 1; i <= 7; i++) {
+                if (i == 7) galaxy.empire(0).tech().learnTech(project[0].substring("research/".length()));
+                match.decide(galaxy);
+                galaxy.advanceTime();
+            }
+            assertEquals(List.of(1, 3, 3, 4, 7), calls);
+        }
+    }
+
     private static MatchConfig.Seat seat(String name) {
         return new MatchConfig.Seat("llm", name, name, "scripted", "data", null, null);
     }

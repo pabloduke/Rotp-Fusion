@@ -23,7 +23,7 @@ interface LeaderClient {
     }
 
     enum Request {
-        DRAFT("draft-schema.json"), TURN("turn-schema.json");
+        DRAFT("draft-schema.json"), TURN("turn-schema.json"), REVIEW("review-schema.json"), FOLLOWUP("review-schema.json");
 
         private final String schemaFile;
         Request(String schemaFile) { this.schemaFile = schemaFile; }
@@ -43,6 +43,21 @@ interface LeaderClient {
     }
 
     JsonObject ask(MatchConfig.Seat seat, String persona, Request request, String briefing) throws IOException, InterruptedException;
+
+    default JsonObject ask(MatchConfig.Seat seat, String persona, Request request, String briefing,
+                           MatchMetrics.Usage usage) throws IOException, InterruptedException {
+        return ask(seat, persona, request, briefing);
+    }
+
+    @FunctionalInterface
+    interface Metered extends LeaderClient {
+        @Override JsonObject ask(MatchConfig.Seat seat, String persona, Request request, String briefing,
+                            MatchMetrics.Usage usage) throws IOException, InterruptedException;
+        default JsonObject ask(MatchConfig.Seat seat, String persona, Request request, String briefing)
+                throws IOException, InterruptedException {
+            return ask(seat, persona, request, briefing, new MatchMetrics.Usage());
+        }
+    }
 
     static Map<String, Object> chatPayload(MatchConfig.Seat seat, String persona, Request request,
                                            String briefing, MatchConfig.Endpoint endpoint) throws IOException {
@@ -68,8 +83,8 @@ interface LeaderClient {
         var client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
         var gson = new Gson();
         var codex = new CodexExec("codex");
-        return (seat, persona, request, briefing) -> {
-            if (seat.isCodex()) return codex.ask(seat, persona, request, briefing);
+        return (Metered) (seat, persona, request, briefing, usage) -> {
+            if (seat.isCodex()) return codex.ask(seat, persona, request, briefing, usage);
             var endpoint = config.endpoints().get(seat.endpoint());
             var builder = HttpRequest.newBuilder(endpoint.chatUri()).timeout(Duration.ofSeconds(60))
                     .header("Content-Type", "application/json")
@@ -78,6 +93,8 @@ interface LeaderClient {
             var response = client.send(builder.build(), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             if (response.statusCode() != 200) throw new IOException("HTTP " + response.statusCode());
             var envelope = JsonParser.parseString(response.body()).getAsJsonObject();
+            if (envelope.get("usage") instanceof JsonObject counts)
+                usage.read(counts, "prompt_tokens", "completion_tokens");
             String content = envelope.getAsJsonArray("choices").get(0).getAsJsonObject()
                     .getAsJsonObject("message").get("content").getAsString();
             return parseReply(content);
