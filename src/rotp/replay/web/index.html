@@ -10,7 +10,13 @@
 <main>
 <p role="alert" id="error" hidden></p>
 <section id="library">
-<div class="heading"><h1>Replay library</h1><button id="refresh">Refresh</button></div>
+<div class="heading"><h1>Replay library</h1><div class="filters"><label>Sort by
+<select id="sort">
+<option value="time-desc">Newest first</option><option value="time-asc">Oldest first</option>
+<option value="race-asc">Race A–Z</option><option value="race-desc">Race Z–A</option>
+<option value="model-asc">Model A–Z</option><option value="model-desc">Model Z–A</option>
+<option value="persona-asc">Persona A–Z</option><option value="persona-desc">Persona Z–A</option>
+</select></label><button id="refresh">Refresh</button></div></div>
 <div id="matches" aria-live="polite"></div>
 </section>
 <section id="viewer" hidden>

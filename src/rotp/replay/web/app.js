@@ -21,19 +21,55 @@ async function fetchOk(url, signal) {
 }
 async function json(url, signal) { return (await fetchOk(url, signal)).json(); }
 
+let matches = [];
+const alphabet = new Intl.Collator(undefined, {sensitivity: 'accent'});
+const dateFormat = new Intl.DateTimeFormat(undefined, {dateStyle: 'medium', timeStyle: 'short'});
+const sortFields = {race: 'Races', model: 'Models', persona: 'Personas'};
+
+function rosterValues(match, field) {
+    const values = match.empires.map(empire => empire[field]).filter(Boolean).sort(alphabet.compare);
+    return values.filter((value, i) => i === 0 || alphabet.compare(value, values[i - 1]) !== 0);
+}
+
+function renderLibrary() {
+    const [field, order] = $('sort').value.split('-');
+    const direction = order === 'desc' ? -1 : 1;
+    const rows = matches.map(match => ({match, values: field === 'time' ? [] : rosterValues(match, field)}));
+    rows.sort((a, b) => {
+        let diff = 0;
+        if (field === 'time') diff = a.match.timestampMillis - b.match.timestampMillis;
+        else {
+            if (!a.values.length && b.values.length) return 1;
+            if (a.values.length && !b.values.length) return -1;
+            const count = Math.min(a.values.length, b.values.length);
+            for (let i = 0; i < count && !diff; i++) diff = alphabet.compare(a.values[i], b.values[i]);
+            if (!diff) diff = a.values.length - b.values.length;
+        }
+        return direction * diff || alphabet.compare(a.match.name, b.match.name) || a.match.id.localeCompare(b.match.id);
+    });
+    const cards = rows.map(({match, values}) => {
+        const card = el(match.error ? 'div' : 'a', null, 'match');
+        if (!match.error) card.href = '?replay=' + encodeURIComponent(match.id);
+        const heading = el('div', null, 'heading');
+        const date = new Date(match.timestampMillis);
+        const stamp = el('time', (match.fileModified ? 'File modified · ' : 'Completed · ') + dateFormat.format(date));
+        stamp.dateTime = date.toISOString();
+        stamp.title = date.toString();
+        heading.append(el('strong', match.name), stamp);
+        card.append(heading, el('small', match.error ||
+            match.turns + ' turns · ' + match.empires.map(empire => empire.name).join(' · ')));
+        if (field !== 'time') card.append(el('div', sortFields[field] + ' · ' + (values.join(', ') || 'Not recorded'), 'meta'));
+        return card;
+    });
+    $('matches').replaceChildren(...(cards.length ? cards : [el('p','No completed replays yet.')]));
+}
+
 async function library() {
     $('refresh').disabled = true;
     $('error').hidden = true;
     try {
-        const matches = await json('/api/replays');
-        const cards = matches.map(match => {
-            const card = el(match.error ? 'div' : 'a', null, 'match');
-            if (!match.error) card.href = '?replay=' + encodeURIComponent(match.id);
-            card.append(el('strong', match.name), el('small', match.error ||
-                match.turns + ' turns · ' + match.empires.map(empire => empire.name).join(' · ')));
-            return card;
-        });
-        $('matches').replaceChildren(...(cards.length ? cards : [el('p','No completed replays yet.')]));
+        matches = await json('/api/replays');
+        renderLibrary();
     } catch (error) { report(error); }
     finally { $('refresh').disabled = false; }
 }
@@ -170,4 +206,15 @@ async function openReplay() {
 }
 $('refresh').onclick = library;
 if (replayId) openReplay();
-else library();
+else {
+    const url = new URL(location.href);
+    const sort = $('sort');
+    const saved = url.searchParams.get('sort');
+    if (Array.from(sort.options).some(option => option.value === saved)) sort.value = saved;
+    sort.onchange = () => {
+        url.searchParams.set('sort', sort.value);
+        history.replaceState(null, '', url);
+        renderLibrary();
+    };
+    library();
+}

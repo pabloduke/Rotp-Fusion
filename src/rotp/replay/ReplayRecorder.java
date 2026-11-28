@@ -79,6 +79,9 @@ public final class ReplayRecorder implements Closeable {
         zip.putNextEntry(new ZipEntry("roster.json"));
         zip.write(new Gson().toJson(ReplayRoster.capture(session, match, ais)).getBytes(StandardCharsets.UTF_8));
         zip.closeEntry();
+        zip.putNextEntry(new ZipEntry("completed-at"));
+        new DataOutputStream(zip).writeLong(System.currentTimeMillis());
+        zip.closeEntry();
         zip.putNextEntry(new ZipEntry("index"));
         var out = new DataOutputStream(zip);
         out.writeUTF("ROTP Replay 1");

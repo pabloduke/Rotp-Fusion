@@ -21,8 +21,8 @@ final class ReplayLibrary implements Closeable {
     private final Map<String, Entry> catalog = new LinkedHashMap<>();
     private final Map<String, Opened> opened = new LinkedHashMap<>(4, .75f, true);
 
-    record Empire(int id, String name, String color, String persona, String model, String builtinAi) {}
-    record Summary(String id, String name, int turns, int frames, List<Empire> empires, String error) {}
+    record Empire(int id, String name, String color, String race, String persona, String model, String builtinAi) {}
+    record Summary(String id, String name, int turns, int frames, List<Empire> empires, long timestampMillis, boolean fileModified, String error) {}
     record Metadata(String id, String name, int[] turns, List<Empire> empires, List<String> downloads) {}
     record Event(int frame, int turn, String phase, String kind, int empire, int system,
                  String details, Integer recipient, String category) {
@@ -102,12 +102,14 @@ final class ReplayLibrary implements Closeable {
                     .map(i -> {
                         var seat = roster.get(i.empire());
                         return new Empire(i.empire(), i.name(), String.format("#%06x", i.color() & 0xffffff),
-                                seat == null ? null : seat.persona(), seat == null ? null : seat.model(),
+                                seat == null ? null : seat.race(), seat == null ? null : seat.persona(), seat == null ? null : seat.model(),
                                 seat == null ? null : seat.builtinAi());
                     }).toList();
-            summary = new Summary(id, name, archive.turn(archive.size()-1), archive.size(), empires, null);
+            var completed = archive.completedAtMillis();
+            summary = new Summary(id, name, archive.turn(archive.size()-1), archive.size(), empires,
+                    completed.orElse(version.modified.toMillis()), completed.isEmpty(), null);
         } catch (IOException | RuntimeException failure) {
-            summary = new Summary(id, name, 0, 0, List.of(), archiveError(failure));
+            summary = new Summary(id, name, 0, 0, List.of(), version.modified.toMillis(), true, archiveError(failure));
         }
         catalog.put(id, new Entry(file, version, summary));
     }

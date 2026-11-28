@@ -54,6 +54,14 @@ public final class ReplayArchive implements Closeable {
         }
     }
 
+    /** UTC epoch milliseconds, absent in recordings made before the library stored completion time. */
+    public java.util.OptionalLong completedAtMillis() throws IOException {
+        if (zip.getEntry("completed-at") == null) return java.util.OptionalLong.empty();
+        try (var input = entry("completed-at")) {
+            return java.util.OptionalLong.of(input.readLong());
+        }
+    }
+
     public List<ReplayRoster.Seat> roster() { return roster; }
 
     public int turn(int index) { return turns[index]; }

@@ -172,6 +172,16 @@ class HeadlessMatchTest {
             recorder.capture();
             recorder.finish();
         }
+        long recordedTime;
+        try (var archive = new ReplayArchive(path)) {
+            recordedTime = archive.completedAtMillis().orElseThrow();
+            assertTrue(recordedTime > 0 && recordedTime <= System.currentTimeMillis());
+        }
+        var copy = Files.copy(path, Path.of("copied.rotpreplay"));
+        Files.setLastModifiedTime(copy, java.nio.file.attribute.FileTime.fromMillis(1000));
+        try (var archive = new ReplayArchive(copy)) {
+            assertEquals(recordedTime, archive.completedAtMillis().orElseThrow());
+        }
         Files.delete(config);
         Files.delete(prompt);
         try (var archive = new ReplayArchive(path)) {

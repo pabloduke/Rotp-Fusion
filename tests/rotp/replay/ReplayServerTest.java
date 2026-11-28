@@ -62,6 +62,10 @@ class ReplayServerTest {
             int port = server.port();
             var matches = json(port,"/api/replays").getAsJsonArray();
             assertEquals(1,matches.size());
+            var summary = matches.get(0).getAsJsonObject();
+            assertTrue(summary.get("fileModified").getAsBoolean());
+            assertEquals(Files.getLastModifiedTime(library.resolve("trial.rotpreplay")).toMillis(),
+                    summary.get("timestampMillis").getAsLong());
             String root = "/api/replays/" + matches.get(0).getAsJsonObject().get("id").getAsString();
             var info = json(port,root).getAsJsonObject();
             assertEquals("[1,1,2]",info.get("turns").toString());
