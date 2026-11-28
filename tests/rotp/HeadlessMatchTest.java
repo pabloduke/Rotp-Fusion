@@ -137,6 +137,75 @@ class HeadlessMatchTest {
         assertTrue(mismatch.getMessage().contains("different build"));
     }
 
+    @Test void recordsMixedRosterForOfflinePlayback() throws Exception {
+        run(0, getClass().getName(), "roster");
+    }
+
+    private static void verifyMixedRoster(IGameOptions options) throws Exception {
+        var prompt = Path.of("custom.txt");
+        Files.writeString(prompt, "Private instructions");
+        var config = Path.of("match.json");
+        Files.writeString(config, """
+                {"galaxySize":"small","endpoints":{"local":{"baseUrl":"http://localhost:1/v1"}},"seats":[
+                  {"type":"llm","name":"GLaDOS","preset":"glados","endpoint":"local","model":"shared-model"},
+                  {"type":"llm","name":"Data","preset":"data","endpoint":"local","model":"shared-model"},
+                  {"type":"codex","name":"SHODAN","preset":"shodan"},
+                  {"type":"llm","name":"Archivist","promptFile":"custom.txt","endpoint":"local","model":"org/very-long-local-model-identifier-for-the-replay-legend"},
+                  {"type":"fusion"}]}
+                """);
+        var match = rotp.leader.MatchConfig.load(config);
+        var ais = new String[]{"fusion"};
+        var game = HeadlessMatch.start(options, 4, ais);
+        var galaxy = game.galaxy();
+        var path = Path.of("roster.rotpreplay");
+        try (var recorder = new ReplayRecorder(path, game, match, ais)) {
+            recorder.capture();
+            for (int id = 0; id < 3; id++)
+                for (var system : List.copyOf(galaxy.empire(id).allColonizedSystems()))
+                    system.colony().destroy();
+            var a = galaxy.empire(3);
+            var b = galaxy.empire(4);
+            a.viewForEmpire(b).embassy().contact(true);
+            b.viewForEmpire(a).embassy().contact(true);
+            a.viewForEmpire(b).embassy().signAlliance();
+            assertEquals(Cause.MILITARY_ALLIANCE, game.matchOutcome().cause());
+            recorder.capture();
+            recorder.finish();
+        }
+        long recordedTime;
+        try (var archive = new ReplayArchive(path)) {
+            recordedTime = archive.completedAtMillis().orElseThrow();
+            assertTrue(recordedTime > 0 && recordedTime <= System.currentTimeMillis());
+        }
+        var copy = Files.copy(path, Path.of("copied.rotpreplay"));
+        Files.setLastModifiedTime(copy, java.nio.file.attribute.FileTime.fromMillis(1000));
+        try (var archive = new ReplayArchive(copy)) {
+            assertEquals(recordedTime, archive.completedAtMillis().orElseThrow());
+        }
+        Files.delete(config);
+        Files.delete(prompt);
+        try (var archive = new ReplayArchive(path)) {
+            var seats = archive.roster();
+            assertEquals(5, seats.size());
+            for (var seat : seats) {
+                var empire = galaxy.empire(seat.empireId());
+                assertEquals(empire.name(), seat.empireName());
+                assertEquals(empire.raceName(), seat.race());
+                assertEquals(empire.id >= 3, seat.winner());
+            }
+            assertEquals("glados", seats.get(0).persona());
+            assertEquals("data", seats.get(1).persona());
+            assertEquals("shared-model", seats.get(0).model());
+            assertEquals(seats.get(0).model(), seats.get(1).model());
+            assertEquals("local", seats.get(0).provider());
+            assertEquals("gpt-5.6-terra", seats.get(2).model());
+            assertEquals("low", seats.get(2).reasoningEffort());
+            assertEquals("Archivist", seats.get(3).persona());
+            assertEquals("fusion", seats.get(4).builtinAi());
+        }
+        assertTrue(Files.size(rotp.replay.ReplayVideo.export(path)) > 0);
+    }
+
     @Test void validatesArguments() throws Exception {
         assertTrue(run(0, "rotp.Launcher$Mini", "--headless", "--help").contains("--ais"));
         assertTrue(run(2, "rotp.Launcher", "--headless", "--ais", "missing").contains("Unknown AI"));
@@ -169,6 +238,10 @@ class HeadlessMatchTest {
             System.exit(0);
         }
         var options = RulesetManager.current().newOptions();
+        if (args.length == 1 && args[0].equals("roster")) {
+            verifyMixedRoster(options);
+            System.exit(0);
+        }
         if (args.length == 1 && args[0].equals("objective")) {
             rotp.leader.ScriptedLeaders.objectiveLifecycle(Path.of("."), () -> HeadlessMatch.start(options, 2, new String[]{"fusion"}));
             System.exit(0);

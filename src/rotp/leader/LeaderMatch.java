@@ -209,7 +209,7 @@ public final class LeaderMatch implements AutoCloseable {
                     if (!leader.memory.isBlank()) leader.history.remember(galaxy.currentTurn(), leader.memory, topics);
                 }
             }
-            else ReplayRecorder.event("Leader strategy", id, -1, "No valid response. Retaining existing orders.");
+            else ReplayRecorder.event("Leader fallback", id, -1, "No valid response. Retaining existing orders.");
         }
     }
 

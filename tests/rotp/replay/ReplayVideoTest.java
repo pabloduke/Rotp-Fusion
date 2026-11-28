@@ -74,7 +74,10 @@ class ReplayVideoTest {
         for (var property : List.of("codec_name=h264","width=1920","height=1080","pix_fmt=yuv420p","r_frame_rate=10/1","nb_read_frames=4","Military alliance victory — Won by Alpha, Beta"))
             assertTrue(metadata.contains(property),metadata);
         ReplayMap map;
-        try (var archive = new ReplayArchive(path)) { map = ReplayMap.from(archive); }
+        try (var archive = new ReplayArchive(path)) {
+            assertTrue(archive.roster().isEmpty());
+            map = ReplayMap.from(archive);
+        }
         var point = map.point(frames.get(0).items().get(0),1920,1080,true);
         point.translate(30,30);
         var decode = new ProcessBuilder("ffmpeg","-loglevel","error","-i",video.toString(),"-vf",

@@ -79,7 +79,13 @@ Set the top-level match field `"scheduler": "event"` to try persistent objective
 
 Each completed leader match writes a sibling `.metrics.json` with per-seat and combined attempts, retries, failures, provider-reported input and output tokens, and time spent on requests. Missing usage counts indicate partial coverage. Simulation and video export times are separate. To compare schedulers, run the same match file once with `"legacy"` and once with `"event"`, using distinct recording names. The draft seed controls race selection priority. Independently generated galaxies and model decisions can produce different game lengths, so compare per-turn costs alongside totals.
 
-The desktop replay journal includes the draft, strategy summaries, orders and diplomatic exchanges. Opening the replay or exporting its video again works offline.
+A completed `--match` run also writes two UTF-8 text files beside the recording. For `duel.rotpreplay`, open `duel-diplomacy.txt` for diplomatic messages and `duel-journal.txt` for turn-by-turn in-character summaries, orders, outcomes, and engine fallbacks. Regenerate both files offline from a compatible archive with:
+
+```sh
+java -jar target/rotp-Fusion-2026-11-27.jar --export-replay-logs replays/duel.rotpreplay
+```
+
+The desktop replay journal includes the draft, strategy summaries, orders and diplomatic exchanges. The **Empire roster** tab shows the race, player, persona, and model or built-in AI for every empire throughout playback. The MP4 territory legend labels each controller and identifies the winners on the final frame. Older compatible recordings display “Not recorded” for missing controller metadata. Opening the replay or exporting its video again works offline.
 
 ### Record and replay a match
 
@@ -142,3 +148,17 @@ Recordings include a compressed game snapshot and observer data for each turn. P
 [How To](doc/HowTo.md)
 
 
+
+### Watch recorded matches from a browser
+
+Start the replay library on the machine that holds the recordings.
+
+```sh
+java -jar target/rotp-Fusion-2026-11-27.jar --serve-replays --dir replays --bind 0.0.0.0 --port 8080
+```
+
+Use your build's JAR filename. The directory, bind address, and port shown above are the defaults. Open the printed LAN address from a browser on the same trusted network. The server provides read-only access without a login. To restrict viewing to the host, use `--bind 127.0.0.1`. Stop the server with Ctrl+C.
+
+Select a recording to start paused on its first frame. Step through the map, jump to a turn, or select a history entry to see the frame where it was recorded. Filter by empire, diplomacy, leader journal, or battles. By default the timeline reveals events through the selected frame. Select **Reveal full history** for the complete timeline and result. The MP4 and downloadable text logs, when available, contain the whole match. Each browser controls its own playback. Refresh the library after another simulation finishes.
+
+The replay library opens newest first and shows completion times in your browser’s time zone. Older archives use a date labeled **File modified**. Use **Sort by** to order games by time, race, model, or persona in either direction. Refresh keeps your selection. Games without the selected roster field appear last.

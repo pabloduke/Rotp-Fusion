@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Replay library · ROTP Fusion</title>
+<link rel="stylesheet" href="/style.css"><script type="module" src="/app.js"></script>
+</head>
+<body>
+<header><a href="/" class="brand"><span aria-hidden="true">✦</span> ROTP Fusion</a><span>Replay archive</span></header>
+<main>
+<p role="alert" id="error" hidden></p>
+<section id="library">
+<div class="heading"><h1>Replay library</h1><div class="filters"><label>Sort by
+<select id="sort">
+<option value="time-desc">Newest first</option><option value="time-asc">Oldest first</option>
+<option value="race-asc">Race A–Z</option><option value="race-desc">Race Z–A</option>
+<option value="model-asc">Model A–Z</option><option value="model-desc">Model Z–A</option>
+<option value="persona-asc">Persona A–Z</option><option value="persona-desc">Persona Z–A</option>
+</select></label><button id="refresh">Refresh</button></div></div>
+<div id="matches" aria-live="polite"></div>
+</section>
+<section id="viewer" hidden>
+<a class="back" href="/">← Replay library</a>
+<div class="heading"><h1 id="name"></h1><label><input type="checkbox" id="reveal"> Reveal full history</label></div>
+<p id="outcome" hidden></p>
+<div class="layout">
+<div class="stage">
+<div class="canvas"><img alt="Recorded galaxy territory map" id="map"></div>
+<div class="controls">
+<div class="heading"><strong id="position"></strong><label>Jump to turn <input type="number" min="1" id="jump"></label></div>
+<input type="range" aria-label="Replay frame" min="0" id="scrub">
+<div class="transport"><button id="prev" aria-label="Previous frame">←</button><button id="play">Play</button><button id="next" aria-label="Next frame">→</button>
+<label>Speed <select id="speed"><option>0.5</option><option selected>1</option><option>2</option><option>4</option></select> ×</label></div>
+</div>
+<div id="roster"></div><div id="downloads"></div>
+</div>
+<aside><h2>Turn history</h2>
+<div class="filters"><select id="category" aria-label="Event category"><option value="all">All events</option><option value="diplomacy">Diplomacy</option><option value="journal">Leader journal</option><option value="battles">Battles</option></select><select id="empire" aria-label="Empire"><option value="">All empires</option></select></div>
+<div id="events"></div>
+<div class="pages"><button id="older">Older</button><span id="count"></span><button id="newer">Newer</button></div>
+</aside></div></section>
+</main></body></html>
