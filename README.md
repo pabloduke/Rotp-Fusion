@@ -142,3 +142,15 @@ Recordings include a compressed game snapshot and observer data for each turn. P
 [How To](doc/HowTo.md)
 
 
+
+### Watch recorded matches from a browser
+
+Start the replay library on the machine that holds the recordings.
+
+```sh
+java -jar target/rotp-Fusion-2026-11-27.jar --serve-replays --dir replays --bind 0.0.0.0 --port 8080
+```
+
+Use your build's JAR filename. The directory, bind address, and port shown above are the defaults. Open the printed LAN address from a browser on the same trusted network. The server provides read-only access without a login. To restrict viewing to the host, use `--bind 127.0.0.1`. Stop the server with Ctrl+C.
+
+Select a recording to start paused on its first frame. Step through the map, jump to a turn, or select a history entry to see the frame where it was recorded. Filter by empire, diplomacy, leader journal, or battles. By default the timeline reveals events through the selected frame. Select **Reveal full history** for the complete timeline and result. The MP4 and downloadable text logs, when available, contain the whole match. Each browser controls its own playback. Refresh the library after another simulation finishes.
