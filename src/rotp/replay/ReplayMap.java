@@ -32,7 +32,7 @@ public final class ReplayMap {
         this(initial, conflicts, List.of());
     }
 
-    private ReplayMap(ReplayFrame initial, ReplayConflicts conflicts, List<ReplayRoster.Seat> roster) {
+    ReplayMap(ReplayFrame initial, ReplayConflicts conflicts, List<ReplayRoster.Seat> roster) {
         this.roster = roster;
         this.conflicts = conflicts;
         var stars = initial.items().stream().filter(i -> i.kind().equals("System")).toList();
