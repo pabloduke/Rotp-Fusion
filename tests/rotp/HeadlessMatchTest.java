@@ -147,6 +147,14 @@ class HeadlessMatchTest {
         run(0, getClass().getName(), "leaders");
     }
 
+    @Test void eventDrivenLeadersRetainObjectivesAndBatchMail() throws Exception {
+        run(0, getClass().getName(), "event");
+    }
+
+    @Test void objectiveCompletionAndFailedReviews() throws Exception {
+        run(0, getClass().getName(), "objective");
+    }
+
     @Test void aiRosterSurvivesLossOfFirstEmpire() throws Exception {
         run(0, getClass().getName());
     }
@@ -161,6 +169,14 @@ class HeadlessMatchTest {
             System.exit(0);
         }
         var options = RulesetManager.current().newOptions();
+        if (args.length == 1 && args[0].equals("objective")) {
+            rotp.leader.ScriptedLeaders.objectiveLifecycle(Path.of("."), () -> HeadlessMatch.start(options, 2, new String[]{"fusion"}));
+            System.exit(0);
+        }
+        if (args.length == 1 && args[0].equals("event")) {
+            rotp.leader.ScriptedLeaders.eventDriven(Path.of("."), () -> HeadlessMatch.start(options, 2, new String[]{"fusion"}));
+            System.exit(0);
+        }
         if (args.length == 1 && args[0].equals("leaders")) {
             rotp.leader.ScriptedLeaders.run(Path.of("."), options,
                     () -> HeadlessMatch.start(options, 2, new String[]{"fusion"}));

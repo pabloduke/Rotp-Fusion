@@ -1,0 +1,81 @@
+{
+  "type": "object",
+  "properties": {
+    "summary": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "allocation": {
+      "description": "Six integer allocations totaling 60, or null to keep current policy.",
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "integer"
+      }
+    },
+    "orders": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "diplomacy": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "choice": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "choice",
+          "text"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "detailSections": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "cancel": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "mailWindow": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "reviewAfter": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "summary",
+    "allocation",
+    "orders",
+    "diplomacy",
+    "detailSections",
+    "cancel",
+    "mailWindow",
+    "reviewAfter"
+  ],
+  "additionalProperties": false
+}

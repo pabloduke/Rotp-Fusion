@@ -34,6 +34,7 @@ class CodexExecTest {
                 input=$(cat)
                 case "$input" in *"persona for seat A"*"only visible to A"*) ;; *) exit 3 ;; esac
                 echo 'CLI progress is not a decision'
+                echo '{"type":"turn.completed","usage":{"input_tokens":42,"output_tokens":7}}'
                 if grep -q preferences "$schema"; then
                     echo '{"summary":"Research","preferences":["RACE_PSILON"]}' > "$reply"
                 else
@@ -46,7 +47,10 @@ class CodexExecTest {
         assertTrue(seat.modelLabel().contains("reasoning high"));
         var draft = client.ask(seat, "persona for seat A", LeaderClient.Request.DRAFT, "only visible to A");
         assertEquals("RACE_PSILON", draft.getAsJsonArray("preferences").get(0).getAsString());
-        var turn = client.ask(seat, "persona for seat A", LeaderClient.Request.TURN, "only visible to A");
+        var usage = new MatchMetrics.Usage();
+        var turn = client.ask(seat, "persona for seat A", LeaderClient.Request.TURN, "only visible to A", usage);
+        assertEquals(42L, usage.input);
+        assertEquals(7L, usage.output);
         assertEquals("Explore", turn.get("summary").getAsString());
         assertFalse(turn.has("allocation"));
     }

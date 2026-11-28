@@ -118,7 +118,13 @@ final class HeadlessMatch {
             throw new java.io.IOException("Cannot record " + recording + " at turn " + session.galaxy().currentTurn(), failure);
         }
         System.out.println("Recording: " + recording.toAbsolutePath());
-        System.out.println("Video: " + rotp.replay.ReplayVideo.export(recording));
+        long videoStart = System.nanoTime();
+        try {
+            System.out.println("Video: " + rotp.replay.ReplayVideo.export(recording));
+        } finally {
+            if (leaders != null)
+                System.out.println("Metrics: " + leaders.writeMetrics(recording, videoStart, session.galaxy().currentTurn()));
+        }
         var outcome = session.matchOutcome();
         System.out.println("Turn " + session.galaxy().currentTurn() + " — " + outcome.cause());
         for (var seat : session.controllerRegistry().seats())
